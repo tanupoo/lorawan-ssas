@@ -39,30 +39,30 @@ def parse(payload):
 
     return {
         "utc_time": hexstr_unixtime_to_iso8601(payload[8:16]),
-        "temperature": int(payload[4:8], 16),
-        "latitude": hexstr_ieee754_to_float(payload[16:24]),
-        "longitude": hexstr_ieee754_to_float(payload[24:32]),
-        "altitude": float(int(payload[32:36], 16) / 10),
-        "speed": float(int(payload[36:40], 16) / 10),
-        "gyro_x": int(payload[40], 16),
-        "gyro_y": int(payload[42], 16),
-        "gyro_z": int(payload[44], 16),
-        "battery_level": int(payload[0:4], 16)
+        "temperature": "%d" % int(payload[4:8], 16),
+        "latitude": "%.6f" % hexstr_ieee754_to_float(payload[16:24]),
+        "longitude": "%.6f" % hexstr_ieee754_to_float(payload[24:32]),
+        "altitude": "%.2f" % float(int(payload[32:36], 16) / 10),
+        "speed": "%.2f" % float(int(payload[36:40], 16) / 10),
+        "gyro_x": "%d" % int(payload[40], 16),
+        "gyro_y": "%d" % int(payload[42], 16),
+        "gyro_z": "%d" % int(payload[44], 16),
+        "battery_level": "%d" % int(payload[0:4], 16)
         }
 
 '''
 test code
 '''
 if __name__ == '__main__' :
-    v = appHga("0000000058d4b41b420ea943430bbb24021d000000000000");
+    v = parse("0000000058d4b41b420ea943430bbb24021d000000000000");
     print("DEBUG: ")
     print("  utc_time = %s" % v["utc_time"])
-    print("  temperature = %d ?" % v["temperature"])
-    print("  latitude = %f" % v["latitude"])
-    print("  longitude = %f" % v["longitude"])
-    print("  altitude = %.1f m" % v["altitude"])
-    print("  speed = %.1f km/h" % v["speed"])
-    print("  gyro_x = %d" % v["gyro_x"])
-    print("  gyro_y = %d" % v["gyro_y"])
-    print("  gyro_z = %d" % v["gyro_z"])
-    print("  battery level = %d ?" % v["battery_level"])
+    print("  temperature = %s ?" % v["temperature"])
+    print("  latitude = %s" % v["latitude"])
+    print("  longitude = %s" % v["longitude"])
+    print("  altitude = %s m" % v["altitude"])
+    print("  speed = %s km/h" % v["speed"])
+    print("  gyro_x = %s" % v["gyro_x"])
+    print("  gyro_y = %s" % v["gyro_y"])
+    print("  gyro_z = %s" % v["gyro_z"])
+    print("  battery level = %s ?" % v["battery_level"])

@@ -32,12 +32,12 @@ def parse(payload):
         return {}
 
     return {
-        "device_type": int(payload[0:2], 16),
-        "gps_fix_status": bin(int(payload[2:4], 16))[2:4],
-        "report_type": int(bin(int(payload[2:4], 16))[4:], 2),
-        "battery_capacity": int(payload[4:6], 16),
-        "latitude": float(int(payload[6:14], 16)) * 0.000001,
-        "longitude": float(int(payload[14:22], 16)) * 0.000001
+        "device_type": "%d" % int(payload[0:2], 16),
+        "gps_fix_status": "%s" % bin(int(payload[2:4], 16))[2:4],
+        "report_type": "%d" % int(bin(int(payload[2:4], 16))[4:], 2),
+        "battery_capacity": "%d" % int(payload[4:6], 16),
+        "latitude": "%.6f" % (float(int(payload[6:14], 16)) * 0.000001),
+        "longitude": "%.6f" % (float(int(payload[14:22], 16)) * 0.000001)
         }
 
 '''
@@ -46,9 +46,9 @@ test code
 if __name__ == '__main__' :
     v = parse("008263022034b60854231c");
     print("DEBUG: ")
-    print("  device_type = %d" % v["device_type"])
+    print("  device_type = %s" % v["device_type"])
     print("  gps_fix_status = %s" % v["gps_fix_status"])
     print("  report_type = %s" % v["report_type"])
-    print("  battery_capacity = %d %%" % v["battery_capacity"])
-    print("  latitude = %f" % v["latitude"])
-    print("  longitude = %f" % v["longitude"])
+    print("  battery_capacity = %s %%" % v["battery_capacity"])
+    print("  latitude = %s" % v["latitude"])
+    print("  longitude = %s" % v["longitude"])
