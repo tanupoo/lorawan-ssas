@@ -1,0 +1,10 @@
+{
+    "debug_level": 3,
+    "server_ip": "127.0.0.1",
+    "server_port": "51225",
+    "db_url": "http://127.0.0.1:28036/aaa/ccc/",
+    "app_map": {
+        "BEEF0D0000000001" : "HGA_HGOK_IoT_SN13",
+        "000DB53114683543" : "GLOBALSAT_TL_100"
+    }
+}
