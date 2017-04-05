@@ -12,14 +12,16 @@ import json
 import re
 import httplib2
 from tiny_http_server import *
-import app_parser
+from app_parser import *
 
 KEY_TOPOBJ = "DevEUI_uplink"
 KEY_TIME = "Time"
 KEY_PAYLOAD_HEX = "payload_hex"
 KEY_DEVEUI = "DevEUI"
-KEY_APP_MAP = "app_map"
 KEY_APP_DATA = "__app_data"
+CONF_APP_MAP = "app_map"
+CONF_SERV_PATH = "server_path"
+CONF_DB_URL = "db_url"
 DEVTYPE_HGA_HGOK_IOT_SN13 = "HGA_HGOK_IoT_SN13"
 DEVTYPE_GLOBALSAT_TL_100 = "GLOBALSAT_TL_100"
 MONGODB_DEFUALT_TIMEOUT = 3
@@ -37,7 +39,7 @@ def http_post(url, payload, ctype="text/plain", config=None):
                 body=payload, headers=headers)
     except Exception as e:
         if len(e.message) == 0:
-            print("ERROR: protocol mismatch")
+            print("ERROR: protocol for mongodb is not correct.")
         else:
             print("ERROR: ", e)
         return None
@@ -66,7 +68,8 @@ def convert_json_timestamp(json_data, config=None):
     if not j:
         print("ERROR: key %s doesn't exist in the payload." % KEY_TIME)
         return None
-    print("DEBUG: %s.%s = %s" % (KEY_TOPOBJ, KEY_TIME, j))
+    if config.get("debug", 0) >= 2:
+        print("DEBUG: %s.%s = %s" % (KEY_TOPOBJ, KEY_TIME, j))
     # remove a colon in TZ if exists.
     re_canon = re.compile(r"\+(\d+):(\d+)")
     json_data[KEY_TOPOBJ][KEY_TIME] = json.loads(mongo_time_value %
@@ -79,12 +82,8 @@ into the application JSON data coresponding to the application type.
 Return JSON, or return None if in error.
 '''
 def convert_app_payload(json_data, config=None):
-    print('xxxxx', type(config))
-    print(dir(config))
-    appmap = config.get(KEY_APP_MAP, {})
+    appmap = config[CONF_APP_MAP]
     if not len(appmap):
-        # return the data as it is.
-        print("DEBUG: %s is not defined in the config." % KEY_APP_MAP)
         return json_data
     # get the root object
     j_root = json_data.get(KEY_TOPOBJ)
@@ -96,13 +95,15 @@ def convert_app_payload(json_data, config=None):
     if not hex_pl:
         print("ERROR: key %s doesn't exist in the payload." % KEY_PAYLOAD_HEX)
         return None
-    print("DEBUG: %s.%s = %s" % (KEY_TOPOBJ, KEY_PAYLOAD_HEX, hex_pl))
+    if config.get("debug", 0) >= 2:
+        print("DEBUG: %s.%s = %s" % (KEY_TOPOBJ, KEY_PAYLOAD_HEX, hex_pl))
     # get deveui
     deveui = j_root.get(KEY_DEVEUI)
     if not deveui:
         print("ERROR: key %s doesn't exist in the payload." % KEY_DEVEUI)
         return None
-    print("DEBUG: %s.%s = %s" % (KEY_TOPOBJ, KEY_DEVEUI, deveui))
+    if config.get("debug", 0) >= 2:
+        print("DEBUG: %s.%s = %s" % (KEY_TOPOBJ, KEY_DEVEUI, deveui))
     # convert the payload
     devtype = appmap.get(deveui)
     if devtype == DEVTYPE_HGA_HGOK_IOT_SN13:
@@ -112,7 +113,7 @@ def convert_app_payload(json_data, config=None):
     else:
         # return the data as it is.
         return json_data
-    json_data[KEY_TOPOBJ][KEY_APP_DATA] = json.loads(j)
+    json_data[KEY_TOPOBJ][KEY_APP_DATA] = j
     return json_data
 
 
@@ -125,12 +126,13 @@ def convert_payload(payload, config=None):
     try:
         jd = json.loads(payload)
     except Exception as e:
-        print("ERROR: ", e)
+        print("ERROR: convert_payload: ", e)
         return None
-    print("DEBUG: ", json.dumps(jd))
     jd = convert_app_payload(jd, config=config)
     jd = convert_json_timestamp(jd, config=config)
     return json.dumps(jd)
+
+import sys
 
 '''
 '''
@@ -138,23 +140,27 @@ class LoRawanSuperSimpleASHandler(ChunkableHTTPRequestHandler):
 
     __version__ = '0.1'
 
+    def do_GET(self):
+        pass
+
     def post_read(self, payload):
+        server_path = self.server.config.get("server_path", "")
+        if self.path != server_path:
+            raise ValueError(
+                    "ERROR: accessing to %s is not allowed, should be %s" %
+                    (self.path, server_path))
         if self._is_debug(3):
             print('---BEGIN OF REQUESTED DATA---')
             print(payload)
             print('---END OF REQUESTED DATA---')
-        url = self.server.config.get("db_url")
-        if not url:
-            print("ERROR: db_url is not defined.")
-            self.put_response("ERROR")  # XXX
         msg = convert_payload(payload, config=self.server.config)
         if not msg:
-            self.put_response("ERROR")  # XXX
-            exit(-1)
-        res = http_post(url, msg, ctype="application/json",
-                        config=self.server.config)
+            raise RuntimeError("ERROR: payload conversion has failed.")
+        res = http_post(self.server.config[CONF_DB_URL], msg,
+                        ctype="application/json", config=self.server.config)
         if res:
-            print("DEBUG: MongoDB's response: ", res)
+            if self.server.config.get("debug", 0) >= 2:
+                print("DEBUG: MongoDB's response: ", res)
         self.put_response("OK")
 
 '''
@@ -162,5 +168,12 @@ test
 '''
 if __name__ == '__main__':
     httpd = TinyHTTPServer(LoRawanSuperSimpleASHandler)
+    httpd.set_config()
+    httpd.set_opt(CONF_DB_URL)
+    httpd.set_opt(CONF_SERV_PATH, default="/as")
+    httpd.set_opt(CONF_APP_MAP, type=dict, default=None, required=False)
+    # check the app_map
+    if not httpd.config[CONF_APP_MAP]:
+        print("INFO: %s is not defined in the config." % CONF_APP_MAP)
     httpd.run()
 
