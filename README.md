@@ -32,6 +32,8 @@ Then, you should change the directory.
 
     % cd lorawan-ss-as
 
+python dateutils module is required.
+
 ## How to run
 
     % python lrwssas.py -c config.json
