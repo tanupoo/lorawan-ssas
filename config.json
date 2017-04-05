@@ -1,7 +1,8 @@
 {
-    "debug_level": 3,
+    "debug_level": 0,
     "server_ip": "127.0.0.1",
     "server_port": "51225",
+    "server_path": "/as",
     "db_url": "http://127.0.0.1:28036/aaa/ccc/",
     "app_map": {
         "BEEF0D0000000001" : "HGA_HGOK_IoT_SN13",
