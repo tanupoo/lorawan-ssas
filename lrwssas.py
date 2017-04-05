@@ -13,6 +13,7 @@ import re
 import httplib2
 from tiny_http_server import *
 from app_parser import *
+from datetime_timestamp import *
 
 KEY_TOPOBJ = "DevEUI_uplink"
 KEY_TIME = "Time"
@@ -56,7 +57,15 @@ def http_post(url, payload, ctype="text/plain", config=None):
 Convert ISO8601 format in DevEUI_uplink.Time of JSON into MongoDB date.
 Return JSON, or return None if in error.
 '''
-def convert_json_timestamp(json_data, config=None):
+def convert_json_timestamp(dt_str):
+    return json.loads('{ "$date" : %d }' % iso8601_to_timestamp_ms(dt_str))
+
+def convert_json_datetime(dt_str):
+    # remove a colon in TZ if exists.
+    re_canon = re.compile(r"\+(\d+):(\d+)")
+    return json.loads(mongo_time_value % re_canon.sub(r"+\1\2", dt_str))
+
+def convert_app_time(json_data, config=None):
     mongo_time_value = '{ "$date" : "%s" }'
     # get the root object
     j = json_data.get(KEY_TOPOBJ)
@@ -70,10 +79,7 @@ def convert_json_timestamp(json_data, config=None):
         return None
     if config.get("debug_level", 0) >= 2:
         print("DEBUG: %s.%s = %s" % (KEY_TOPOBJ, KEY_TIME, j))
-    # remove a colon in TZ if exists.
-    re_canon = re.compile(r"\+(\d+):(\d+)")
-    json_data[KEY_TOPOBJ][KEY_TIME] = json.loads(mongo_time_value %
-                                          re_canon.sub(r"+\1\2", j))
+    json_data[KEY_TOPOBJ][KEY_TIME] = convert_json_timestamp(j)
     return json_data
 
 '''
@@ -129,7 +135,7 @@ def convert_payload(payload, config=None):
         print("ERROR: convert_payload: ", e)
         return None
     jd = convert_app_payload(jd, config=config)
-    jd = convert_json_timestamp(jd, config=config)
+    jd = convert_app_time(jd, config=config)
     return json.dumps(jd)
 
 import sys
