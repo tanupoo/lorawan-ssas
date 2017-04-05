@@ -24,7 +24,13 @@ Otherwise, it is not decoded.
 
 ## How to install
 
-git clone --recursive https://github.com/tanupoo/lorawan-ss-as.git
+To get the python code, you can use git command like below.
+
+    % git clone --recursive https://github.com/tanupoo/lorawan-ss-as.git
+
+Then, you should change the directory.
+
+    % cd lorawan-ss-as
 
 ## How to run
 
@@ -36,7 +42,7 @@ if you want to see debug messages, consider to use the -d options like below.
 
 ## How to test
 
-% curl -d '@test-data.json' http://localhost:51225/as
+    % curl -d '@test-data.json' http://localhost:51225/as
 
 ## configuration example
 
