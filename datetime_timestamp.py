@@ -8,8 +8,7 @@ import dateutil.tz
 import dateutil.parser
 
 __tz_gmt = dateutil.tz.gettz("GMT")
-__tz_tokyo = dateutil.tz.gettz("Asia/Tokyo")
-__epoch = datetime(1970, 1, 1, tzinfo=__tz_tokyo)
+__epoch = datetime(1970, 1, 1, tzinfo=__tz_gmt)
 
 def naive_to_aware(dt, tzinfo=__tz_gmt):
     if dt.tzinfo == None or dt.tzinfo.utcoffset(dt) == None:
@@ -34,11 +33,13 @@ def iso8601_to_timestamp_ms(s, tzinfo=__tz_gmt):
     return ts
 
 if __name__ == '__main__':
-    print(iso8601_to_timestamp_ms("2017-03-24T06:53:32.502+01:00"))
-    print(iso8601_to_timestamp_ms("2017-03-24T06:53:32.50+01:00"))
-    print(iso8601_to_timestamp_ms("2017-03-24T06:53:32.50"))
-    print(iso8601_to_timestamp_ms("2017-03-24T06:53:32.502345"))
-    print(iso8601_to_timestamp_ms("2017-03-24T06:53:32"))
+    # 2017-04-05T14:27:57.944+02:00 => 1491395277944
+    print(iso8601_to_timestamp_ms("2017-04-05T14:27:57.944+02:00"))
+    #print(iso8601_to_timestamp_ms("2017-03-24T06:53:32.502+01:00"))
+    #print(iso8601_to_timestamp_ms("2017-03-24T06:53:32.50+01:00"))
+    #print(iso8601_to_timestamp_ms("2017-03-24T06:53:32.50"))
+    #print(iso8601_to_timestamp_ms("2017-03-24T06:53:32.502345"))
+    #print(iso8601_to_timestamp_ms("2017-03-24T06:53:32"))
 
 '''
 from datetime_timestamp import *
