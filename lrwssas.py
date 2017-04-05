@@ -144,11 +144,12 @@ class LoRawanSuperSimpleASHandler(ChunkableHTTPRequestHandler):
         pass
 
     def post_read(self, payload):
-        server_path = self.server.config.get("server_path", "")
-        if self.path != server_path:
-            raise ValueError(
-                    "ERROR: accessing to %s is not allowed, should be %s" %
-                    (self.path, server_path))
+        #server_path = self.server.config.get("server_path", "")
+        #if server_path and self.path[:len(server_path)] != server_path:
+        #    raise ValueError(
+        #            "ERROR: accessing to %s is not allowed, should be %s" %
+        #            (self.path, server_path))
+        # XXX should check the path.
         if self._is_debug(3):
             print('---BEGIN OF REQUESTED DATA---')
             print(payload)
@@ -170,7 +171,7 @@ if __name__ == '__main__':
     httpd = TinyHTTPServer(LoRawanSuperSimpleASHandler)
     httpd.set_config()
     httpd.set_opt(CONF_DB_URL)
-    httpd.set_opt(CONF_SERV_PATH, default="/as")
+    httpd.set_opt(CONF_SERV_PATH, required=False)
     httpd.set_opt(CONF_APP_MAP, type=dict, default=None, required=False)
     # check the app_map
     if not httpd.config[CONF_APP_MAP]:
