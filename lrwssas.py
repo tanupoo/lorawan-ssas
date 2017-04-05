@@ -43,9 +43,9 @@ def http_post(url, payload, ctype="text/plain", config=None):
         else:
             print("ERROR: ", e)
         return None
-    if config.get("debug", 0) >= 1:
+    if config.get("debug_level", 0) >= 1:
         print("DEBUG: HTTP: %s %s" % (res_headers.status, res_headers.reason))
-    if config.get("debug", 0) >= 2:
+    if config.get("debug_level", 0) >= 2:
         print("DEBUG: === BEGIN: response headers")
         for k, v in res_headers.iteritems():
             print("DEBUG: %s: %s" % (k, v))
@@ -68,7 +68,7 @@ def convert_json_timestamp(json_data, config=None):
     if not j:
         print("ERROR: key %s doesn't exist in the payload." % KEY_TIME)
         return None
-    if config.get("debug", 0) >= 2:
+    if config.get("debug_level", 0) >= 2:
         print("DEBUG: %s.%s = %s" % (KEY_TOPOBJ, KEY_TIME, j))
     # remove a colon in TZ if exists.
     re_canon = re.compile(r"\+(\d+):(\d+)")
@@ -95,14 +95,14 @@ def convert_app_payload(json_data, config=None):
     if not hex_pl:
         print("ERROR: key %s doesn't exist in the payload." % KEY_PAYLOAD_HEX)
         return None
-    if config.get("debug", 0) >= 2:
+    if config.get("debug_level", 0) >= 2:
         print("DEBUG: %s.%s = %s" % (KEY_TOPOBJ, KEY_PAYLOAD_HEX, hex_pl))
     # get deveui
     deveui = j_root.get(KEY_DEVEUI)
     if not deveui:
         print("ERROR: key %s doesn't exist in the payload." % KEY_DEVEUI)
         return None
-    if config.get("debug", 0) >= 2:
+    if config.get("debug_level", 0) >= 2:
         print("DEBUG: %s.%s = %s" % (KEY_TOPOBJ, KEY_DEVEUI, deveui))
     # convert the payload
     devtype = appmap.get(deveui)
@@ -160,7 +160,7 @@ class LoRawanSuperSimpleASHandler(ChunkableHTTPRequestHandler):
         res = http_post(self.server.config[CONF_DB_URL], msg,
                         ctype="application/json", config=self.server.config)
         if res:
-            if self.server.config.get("debug", 0) >= 2:
+            if self.server.config.get("debug_level", 0) >= 2:
                 print("DEBUG: MongoDB's response: ", res)
         self.put_response("OK")
 
