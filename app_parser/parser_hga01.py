@@ -7,11 +7,11 @@ import sys
 import time
 import struct
 
-def hexstr_unixtime_to_iso8601(src):
+def unixtime_hexstr_to_iso8601(src):
     return time.strftime("%Y-%m-%dT%H:%M:%S+0000",
         time.gmtime(int(src, 16)))
 
-def hexstr_ieee754_to_float(src):
+def ieee754_hexstr_to_float(src):
     v = struct.pack(">l", int(src, 16))
     return struct.unpack(">f", v)[0]
 
@@ -38,10 +38,10 @@ def parse(payload):
         return {}
 
     return {
-        "utc_time": hexstr_unixtime_to_iso8601(payload[8:16]),
+        "utc_time": unixtime_hexstr_to_iso8601(payload[8:16]),
         "temperature": "%d" % int(payload[4:8], 16),
-        "latitude": "%.6f" % hexstr_ieee754_to_float(payload[16:24]),
-        "longitude": "%.6f" % hexstr_ieee754_to_float(payload[24:32]),
+        "latitude": "%.6f" % ieee754_hexstr_to_float(payload[16:24]),
+        "longitude": "%.6f" % ieee754_hexstr_to_float(payload[24:32]),
         "altitude": "%.2f" % float(int(payload[32:36], 16) / 10),
         "speed": "%.2f" % float(int(payload[36:40], 16) / 10),
         "gyro_x": "%d" % int(payload[40], 16),
@@ -54,6 +54,11 @@ def parse(payload):
 test code
 '''
 if __name__ == '__main__' :
+    if len(sys.argv) == 1:
+        s = "0000000058d4b41b420ea943430bbb24021d000000000000";
+    else:
+        s = sys.argv[1]
+    print(s)
     v = parse("0000000058d4b41b420ea943430bbb24021d000000000000");
     print("DEBUG: ")
     print("  utc_time = %s" % v["utc_time"])
