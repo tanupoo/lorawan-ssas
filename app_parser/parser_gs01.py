@@ -4,16 +4,6 @@
 from __future__ import print_function
 
 import sys
-import time
-import struct
-
-def hexstr_unixtime_to_iso8601(src):
-    return time.strftime("%Y-%m-%dT%H:%M:%S+0000",
-        time.gmtime(int(src, 16)))
-
-def hexstr_ieee754_to_float(src):
-    v = struct.pack(">l", int(src, 16))
-    return struct.unpack(">f", v)[0]
 
 '''
 payload: application data in hex string.
