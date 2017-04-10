@@ -170,6 +170,13 @@ class LoRawanSuperSimpleASHandler(ChunkableHTTPRequestHandler):
                 print("DEBUG: MongoDB's response: ", res)
         self.put_response("OK")
 
+    def put_response(self, contents, ctype='text/html'):
+        msg_list = []
+        if contents:
+            msg_list.extend(contents)
+        size = reduce(lambda a, b: a + len(b), msg_list, 0)
+        self.send_once(msg_list, size, ctype=ctype)
+
 '''
 test
 '''
