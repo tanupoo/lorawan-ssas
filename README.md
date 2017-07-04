@@ -89,6 +89,20 @@ should not be used.
 
 ## debugging
 
+### debug option
+
+If you turn on the debug mode, lrwssas shows the debug messages
+in the log file or stream you specified.
+To enable the debug mode,
+you can add the -d option or specify the debug_level in the config fie.
+The level 4 is most verbose.
+The -d option in the argument overwrites the level in the config file.
+
+### Tools
+
+pseudo-ns.py in the tools directory periodically sends a message
+assumed to be sent from a NS.
+
 ### database
 
 login into the console of mongodb.
