@@ -173,11 +173,18 @@ class LoRawanSuperSimpleASHandler(ChunkableHTTPRequestHandler):
 '''
 main
 '''
+if len(sys.argv) == 1:
+    print("ERROR: -c option is required.")
+    exit(1)
 httpd = TinyHTTPServer(LoRawanSuperSimpleASHandler, appname="lrwssas")
-httpd.set_config()
-httpd.set_opt(CONF_DB_URL)
-httpd.set_opt(CONF_SERV_PATH, required=False)
-httpd.set_opt(CONF_APP_MAP, type=dict, default=None, required=False)
+try:
+    httpd.set_config()
+    httpd.set_opt(CONF_DB_URL)
+    httpd.set_opt(CONF_SERV_PATH, required=False)
+    httpd.set_opt(CONF_APP_MAP, type=dict, default=None, required=False)
+except Exception as e:
+    print(e)
+    exit(1)
 # check the app_map
 if not httpd.config[CONF_APP_MAP]:
     print("INFO: %s is not defined in the config." % CONF_APP_MAP)
