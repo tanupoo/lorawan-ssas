@@ -20,7 +20,7 @@ into JSON data.
 
 The message parser supports the folowing devices.
 
-- HGA HGOK IoT SN13
+- Highgain Antenna HGOK IoT SN13
 - Globalsat LT-100
 
 Other similiar message could be parsed.
@@ -42,9 +42,10 @@ Then, you should change the directory.
 
 ### mongodb
 
-You have to run mongodb in the same host on which lrwssas.py runs.
-The rest option is required.
-You have to specify "rest = true" in the mongodb.conf.
+You have to run mongodb to store data from the sensors.
+It should run in the same host on which lrwssas.py runs.
+The REST option is required.
+For this, You have to specify "rest = true" in the mongodb.conf.
 To check whether your mongodb can have REST API,
 you can use the following command for example.
 
@@ -64,6 +65,10 @@ if you want to see debug messages, consider to use the -d options like below.
 
 ## configuration example
 
+db_url: specify the end point to the mongodb.
+server_ip: specify the IP address of the HTTP server to be bound.
+server_port: specify the port number of the HTTP server to be bound.
+
     {
         "debug_level": 0,
         "server_ip": "127.0.0.1",
@@ -81,7 +86,7 @@ if you want to see debug messages, consider to use the -d options like below.
 
 ## security considerations
 
-The address of mongodb to be bound should be 127.0.0.1.
+The end point of the mongodb should be 127.0.0.1.
 Otherwise, any user can be accessed into your mongodb from the Internel.
 For this application server,
 the port number of 80, 8080, or something like expectable ones
@@ -103,7 +108,7 @@ The -d option in the argument overwrites the level in the config file.
 pseudo-ns.py in the tools directory periodically sends a message
 assumed to be sent from a NS.
 
-### database
+### mongodb
 
 login into the console of mongodb.
 
