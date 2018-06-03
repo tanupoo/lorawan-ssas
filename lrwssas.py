@@ -25,6 +25,7 @@ CONF_SERV_PATH = "server_path"
 CONF_DB_URL = "db_url"
 DEVTYPE_HGA_HGOK_IOT_SN13 = "HGA_HGOK_IoT_SN13"
 DEVTYPE_GLOBALSAT_TL_100 = "GLOBALSAT_TL_100"
+DEVTYPE_HOKU_TRAP = "HOKU_TRAP"
 MONGODB_DEFUALT_TIMEOUT = 3
 
 import sys
@@ -164,6 +165,8 @@ class LoRawanSuperSimpleASHandler(ChunkableHTTPRequestHandler):
             j = parser_hga01.parse(hex_pl)
         elif devtype == DEVTYPE_GLOBALSAT_TL_100:
             j = parser_gs01.parse(hex_pl)
+        elif devtype == DEVTYPE_HOKU_TRAP:
+            j = parser_hoku01.parse(hex_pl)
         else:
             # return the data as it is.
             return json_data
