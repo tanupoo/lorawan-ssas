@@ -62,7 +62,7 @@ class LoRawanSuperSimpleASHandler(ChunkableHTTPRequestHandler):
         msg_list = []
         if contents:
             msg_list.extend(contents)
-        size = reduce(lambda a, b: a + len(b), msg_list, 0)
+        size = sum([len(i) for i in msg_list])
         self.send_once(msg_list, size, ctype=ctype)
 
     '''
@@ -85,7 +85,7 @@ class LoRawanSuperSimpleASHandler(ChunkableHTTPRequestHandler):
         self.logger.debug("HTTP: %s %s" % (res_headers.status, res_headers.reason))
         self.logger.log(DEBUG2, "=== BEGIN: response headers")
         self.logger.log(DEBUG2, "\n%s" % "".join(
-                [ "%s: %s\n" % (k, v) for k, v in res_headers.iteritems()]))
+                [ "%s: %s\n" % (k, v) for k, v in res_headers.items()]))
         self.logger.log(DEBUG2, "=== END: response headers")
         return res_body
 
