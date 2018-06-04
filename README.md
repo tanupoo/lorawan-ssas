@@ -8,8 +8,8 @@ into JSON data.
 
 ## Requirements
 
-- Python 2.7 or later is required.  Python 3 is not tested.
-- Python dateutils module is required.
+- Python 3 is required.  Python 2.x is not tested well.
+- Python httplib2 and dateutils module are required.
 - mongodb is required, at least 2.4.9 or later.
 
 ## Limitations
@@ -46,10 +46,15 @@ You have to run mongodb to store data from the sensors.
 It should run in the same host on which lrwssas.py runs.
 The REST option is required.
 For this, You have to specify "rest = true" in the mongodb.conf.
+
 To check whether your mongodb can have REST API,
 you can use the following command for example.
 
     curl -d '{"a":1}' http://localhost:28017/aaa/
+
+If your configuration is correct, you can get a response like below:
+
+    { "ok" : true }
 
 The port number 28017 may be different in your system.
 
