@@ -138,6 +138,10 @@ please wait a while until you will receive something.
 
     > db.app.distinct("DevEUI_uplink.DevEUI")
 
+- show the latest 3 data in descending order for the DevEUI specified.
+
+    > db.app.find({"DevEUI_uplink.DevEUI":"DEADBEEF00112233"},{"_id":0}).sort({$natural:-1}).limit(3)
+
 - show the latest data of each DevEUI.
 
     > db.app.aggregate([
