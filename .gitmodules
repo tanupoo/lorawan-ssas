@@ -1,3 +1,0 @@
-[submodule "tiny_http_server"]
-	path = tiny_http_server
-	url = https://github.com/tanupoo/tiny_http_server.git

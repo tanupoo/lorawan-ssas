@@ -9,187 +9,271 @@ from __future__ import print_function
 
 import sys
 import json
-import re
-import httplib2
-from tiny_http_server import *
-from app_parser import *
 from datetime_timestamp import *
+import logging
+from datetime import datetime
+from functools import wraps
+from bottle import Bottle, GeventServer, request
+from gevent import monkey; monkey.patch_all()
+from importlib import import_module
+from argparse import ArgumentParser
+import requests
 
+PROG_NAME = "lrwssas"
 KEY_TOPOBJ = "DevEUI_uplink"
 KEY_TIME = "Time"
 KEY_PAYLOAD_HEX = "payload_hex"
 KEY_DEVEUI = "DevEUI"
 KEY_APP_DATA = "__app_data"
-CONF_APP_MAP = "app_map"
-CONF_SERV_PATH = "server_path"
-CONF_DB_URL = "db_url"
-DEVTYPE_HGA_HGOK_IOT_SN13 = "HGA_HGOK_IoT_SN13"
-DEVTYPE_GLOBALSAT_TL_100 = "GLOBALSAT_TL_100"
-DEVTYPE_HOKU_TRAP = "HOKU_TRAP"
-MONGODB_DEFUALT_TIMEOUT = 3
 
-import sys
+CONF_APP_TYPE = "app_type"
+CONF_APP_TYPE_TRHU = "THRU"
+CONF_APP_PARSER = "app_parser"
+CONF_SERVER_ADDR = "server_addr"
+CONF_SERVER_PORT = "server_port"
+CONF_MONGODB_URL = "mongodb_url"
+CONF_SERVER_CERT = "server_cert"
+CONF_DEBUG_LEVEL = "debug_level"
+
+LOG_FMT = "%(asctime)s.%(msecs)d %(lineno)d %(message)s"
+LOG_DATE_FMT = "%Y-%m-%dT%H:%M:%S"
+
+app = Bottle()
+logger = logging.getLogger(PROG_NAME)
+parser_mod_map = {}
+
+@app.route("/up", method="POST")
+def app_up():
+    log_common(request)
+    if opt.log_stdout and (opt.debug or config(CONF_DEBUG_LEVEL) > 0):
+        payload = request.body.read()
+        logger.debug("---BEGIN OF REQUESTED HEADER---")
+        for k,v in request.headers.items():
+            logger.debug("{}: {}".format(k,v))
+        logger.debug("---END OF REQUESTED HEADER---")
+        logger.debug("---BEGIN OF REQUESTED DATA---")
+        logger.debug(payload)
+        logger.debug("---END OF REQUESTED DATA---")
+        request.body.seek(0)
+    # convert the payload into JSON.
+    try:
+        jd = json.load(request.body)
+    except json.decoder.JSONDecodeError as e:
+        emsg = "The payload format was not likely JSON."
+        logger.error("{}: {}".format(emsg, e))
+        app.abort(404, emsg)
+    #
+    ret = proc_tp_uplink(jd)
+    if ret:
+        app.abort(ret)
 
 '''
-'''
-class LoRawanSuperSimpleASHandler(ChunkableHTTPRequestHandler):
-
-    __version__ = '0.1'
-
-    def do_GET(self):
+class parser():
+    @classmethod
+    def parse(self, payload):
+        # parse the payload and return JSON,
+        # which will be submitted into MongoDB.
+        return {}
+    @classmethod
+    def submit(self, json_data):
+        # submit json_data into a database such as sqlite3.
         pass
+'''
 
-    def post_read(self, payload):
-        #server_path = self.server.config.get("server_path", "")
-        #if server_path and self.path[:len(server_path)] != server_path:
-        #    raise ValueError(
-        #            "ERROR: accessing to %s is not allowed, should be %s" %
-        #            (self.path, server_path))
-        # XXX should check the path.
-        self.logger.log(DEBUG3, '---BEGIN OF REQUESTED DATA---')
-        self.logger.log(DEBUG3, payload)
-        self.logger.log(DEBUG3, '---END OF REQUESTED DATA---')
-        msg = self.convert_payload(payload, config=self.server.config)
-        if not msg:
-            raise RuntimeError("ERROR: payload conversion has failed.")
-        res = self.http_post(self.server.config[CONF_DB_URL], msg,
-                        ctype="application/json", config=self.server.config)
-        if res != '{ "ok" : true }':
-            self.logger.error("MongoDB's response: %s" % repr(res))
-        self.put_response("OK")
-
-    def put_response(self, contents, ctype='text/html'):
-        msg_list = []
-        if contents:
-            msg_list.extend(contents)
-        size = sum([len(i) for i in msg_list])
-        self.send_once(msg_list, size, ctype=ctype)
-
+def proc_tp_uplink(json_data):
     '''
-    Send POST request with the payload to the URL specified.
+    assuming that all keys exist in the config.
     '''
-    def http_post(self, url, payload, ctype="text/plain", config=None):
-        headers = {}
-        headers["Content-Type"] = ctype
-        headers["Content-Length"] = str(len(payload))
-        http = httplib2.Http(timeout=config.get("timeout", MONGODB_DEFUALT_TIMEOUT))
+    # get the root object
+    jd_root = json_data.get(KEY_TOPOBJ)
+    if not jd_root:
+        logger.error("Key {} does not exist in the request.".format(KEY_TOPOBJ))
+        return 400  # bad request.
+    # get deveui
+    deveui = jd_root.get(KEY_DEVEUI)
+    if not deveui:
+        logger.error("Key {} does not exist in the request.".format(KEY_DEVEUI))
+        return 400  # bad request.
+    # get payload_hex
+    payload_hex = jd_root.get(KEY_PAYLOAD_HEX)
+    if not payload_hex:
+        logger.error("Key {} does not exist in the request."
+                     .format(KEY_PAYLOAD_HEX))
+        return 400  # bad request.
+    # get time, for processing later.
+    jd_time = jd_root.get(KEY_TIME)
+    if not jd_time:
+        logger.error("key {} does not exist in the request.".format(KEY_TIME))
+        return 400  # bad request.
+    #
+    logger.info("Received data from {}".format(deveui))
+    # get the parser.
+    app_type = config[CONF_APP_TYPE].get(deveui)
+    if not app_type:
+        logger.error("DevEUI {} is not defined in the config.".format(deveui))
+        return 403  # not found.
+    '''
+    if app_type is CONF_APP_TYPE_TRHU, the payload will not be converted,
+    then submit it into MonghDB.
+    in other case, try to parse the payload and convert into the JSON string,
+    try to call app_parser.submit(), if it doesn't exist. submit it into the
+    MongoDB.
+    '''
+    if app_type == CONF_APP_TYPE_TRHU:
+        submit_mongodb(json_data)
+    else:
+        app_parser = config[CONF_APP_PARSER].get(app_type)
+        parser = parser_mod_map[app_parser]
+        jd_payload = parser.parse(payload_hex, logger=logger)
+        if not jd_payload:
+            logger.error("Parsing payload for DevEUI {} failed.".format(deveui))
+            return 400  # bad request.
+        # add __app_data
+        json_data[KEY_TOPOBJ][KEY_APP_DATA] = jd_payload
+        # submit json_data
         try:
-            res_headers, res_body = http.request(url, method="POST",
-                    body=payload, headers=headers)
-        except Exception as e:
-            if len(e.message) == 0:
-                self.logger.error("protocol for mongodb is not correct.")
-            else:
-                self.logger.error(e)
-            return None
-        self.logger.debug("HTTP: %s %s" % (res_headers.status, res_headers.reason))
-        self.logger.log(DEBUG2, "=== BEGIN: response headers")
-        self.logger.log(DEBUG2, "\n%s" % "".join(
-                [ "%s: %s\n" % (k, v) for k, v in res_headers.items()]))
-        self.logger.log(DEBUG2, "=== END: response headers")
-        return res_body
+            parser.submit(json_data)
+        except AttributeError:
+            submit_mongodb(json_data)
+    #
+    return 0
 
+def submit_mongodb(json_data):
     '''
-    convert the JSON string in the payload into the JSON string for the database.
-    if there is no entry specifying the application for the payload,
-    the part of the application payload will not be changed.
+    if CONF_MONGODB_URL is not defined in the config, do nothing.
+    otherwise,
+    convert ISO8601 time into JSON object for MongoDB.
+    submit json data into MongoDB via REST API.
+    assuming that all keys are exist in the json data.
+    because it assumes that proc_tp_uplink() has been called already.
     '''
-    def convert_payload(self, payload, config=None):
-        try:
-            jd = json.loads(payload)
-        except Exception as e:
-            self.logger.error("convert_payload: %s" % repr(e))
-            return None
-        jd = self.convert_app_payload(jd, config=config)
-        jd = self.convert_app_time(jd, config=config)
-        return json.dumps(jd)
-
-    '''
-    Convert ISO8601 format in DevEUI_uplink.Time of JSON into MongoDB date.
-    Return JSON, or return None if in error.
-    '''
-    def convert_json_timestamp(self, dt_str):
-        return json.loads('{ "$date" : %d }' % iso8601_to_timestamp_ms(dt_str))
-
-    def convert_json_datetime(self, dt_str):
-        # remove a colon in TZ if exists.
-        re_canon = re.compile(r"\+(\d+):(\d+)")
-        return json.loads(mongo_time_value % re_canon.sub(r"+\1\2", dt_str))
-
-    def convert_app_time(self, json_data, config=None):
-        mongo_time_value = '{ "$date" : "%s" }'
-        # get the root object
-        j = json_data.get(KEY_TOPOBJ)
-        if not j:
-            self.logger.error("key %s doesn't exist in the payload." % KEY_TOPOBJ)
-            return None
-        # get datetime
-        j = j[KEY_TIME]
-        if not j:
-            self.logger.error("key %s doesn't exist in the payload." % KEY_TIME)
-            return None
-        self.logger.log(DEBUG2, "%s.%s = %s" % (KEY_TOPOBJ, KEY_TIME, j))
-        json_data[KEY_TOPOBJ][KEY_TIME] = self.convert_json_timestamp(j)
-        return json_data
-
-    '''
-    Convert the hex string of the application payload
-    in DevEUI_uplink.payload_hex into the application JSON data
-    coresponding to the application type.
-    Return JSON, or return None if in error.
-    '''
-    def convert_app_payload(self, json_data, config=None):
-        appmap = config[CONF_APP_MAP]
-        if not len(appmap):
-            return json_data
-        # get the root object
-        j_root = json_data.get(KEY_TOPOBJ)
-        if not j_root:
-            self.logger.error("key %s doesn't exist in the payload." % KEY_TOPOBJ)
-            return None
-        # get payload_hex
-        hex_pl = j_root.get(KEY_PAYLOAD_HEX)
-        if not hex_pl:
-            self.logger.error("key %s doesn't exist in the payload." % KEY_PAYLOAD_HEX)
-            return None
-        self.logger.log(DEBUG2, "%s.%s = %s" % (KEY_TOPOBJ, KEY_PAYLOAD_HEX, hex_pl))
-        # get deveui
-        deveui = j_root.get(KEY_DEVEUI)
-        if not deveui:
-            self.logger.error("key %s doesn't exist in the payload." % KEY_DEVEUI)
-            return None
-        self.logger.log(DEBUG2, "%s.%s = %s" % (KEY_TOPOBJ, KEY_DEVEUI, deveui))
-        # convert the payload
-        devtype = appmap.get(deveui)
-        if devtype == DEVTYPE_HGA_HGOK_IOT_SN13:
-            j = parser_hga01.parse(hex_pl)
-        elif devtype == DEVTYPE_GLOBALSAT_TL_100:
-            j = parser_gs01.parse(hex_pl)
-        elif devtype == DEVTYPE_HOKU_TRAP:
-            j = parser_hoku01.parse(hex_pl)
+    db_url = config.get(CONF_MONGODB_URL)
+    if not db_url:
+        return
+    # get the root object
+    jd_root = json_data.get(KEY_TOPOBJ)
+    # get datetime
+    jd_time = jd_root[KEY_TIME]
+    # Convert ISO8601 format in DevEUI_uplink.Time of JSON into MongoDB date.
+    json_data[KEY_TOPOBJ][KEY_TIME] = json.loads('{{"$date":{}}}'
+                                    .format(iso8601_to_timestamp_ms(jd_time)))
+    # submit.
+    print(json_data)
+    print(config[CONF_MONGODB_URL])
+    ret = requests.post(config[CONF_MONGODB_URL], data=json.dumps(json_data))
+    if ret.ok:
+        ret_value = ret.json()
+        if ret_value == '{ "ok" : true }':
+            if opt.debug or config.get(CONF_DEBUG_LEVEL) > 0:
+                logger.debug("Submitting data into MongoDB succeeded.")
         else:
-            # return the data as it is.
-            return json_data
-        json_data[KEY_TOPOBJ][KEY_APP_DATA] = j
-        return json_data
+            logger.error("MongoDB's response: {}".format(ret_value))
+    else:
+        logger.error("Submitting data into MongoDB failed. {} {} {}"
+            .format(ret.status_code, ret.reason, ret.text))
+
+
+def log_common(request):
+    request_time = datetime.now()
+    logger.info("Access from {} {} {}".format(request.remote_addr,
+                                              request.method, request.url))
+
+def set_logger(config, opt):
+    #
+    # set logger.
+    #   "syslog", not yet
+    #   "stdout"
+    #   filename
+    #
+    log_file = config.get("log_file", "stdout")
+    #
+    if opt.log_stdout or log_file == "stdout":
+        ch = logging.StreamHandler()
+    else:
+        ch = logging.FileHandler(log_file)
+    #
+    ch.setFormatter(logging.Formatter(fmt=LOG_FMT, datefmt=LOG_DATE_FMT))
+    ch.setLevel(logging.DEBUG)
+    logger.addHandler(ch)
+    if opt.debug or config.get(CONF_DEBUG_LEVEL) > 0:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.INFO)
+
+def check_config(config):
+    # check if the app_type key exists.
+    app_type_map = config.get(CONF_APP_TYPE)
+    if not app_type_map:
+        print("Key {} does not exist in the config.".format(CONF_APP_TYPE))
+        return False
+    # check if the app_parser key exists.
+    app_parser_map = config.get(CONF_APP_PARSER)
+    if not app_parser_map:
+        print("Key {} does not exist in the config.".format(CONF_PARSER_TYPE))
+        return False
+    # check if the parser is defined.
+    # if app_type is CONF_APP_TYPE_TRHU, it's out of scope.
+    # if parser.submit is not defined, it will be submitted into MongoDB.
+    '''
+    if "" not in sys.path:
+        sys.path.append("")
+        print("zero length string was added into sys.path.")
+    '''
+    for k,v in app_type_map.items():
+        if v == CONF_APP_TYPE_TRHU:
+            continue
+        app_parser = app_parser_map.get(v)
+        if not app_parser:
+            print("Parser for {} is not defined in the config.".format(k))
+            return False
+        mod = import_module(app_parser)
+        parser = mod.parser()
+        if not getattr(parser, "parse"):
+            print("parse() is not defined in the parser module for {}."
+                         .format(k))
+            return False
+        parser_mod_map[app_parser] = parser
+    #
+    if not config.setdefault(CONF_MONGODB_URL, None):
+        print("""NOTICE: URL of MongoDB is not defined. \
+Any data will not be stored unless you define submit() \
+in your parser.""")
+    config.setdefault(CONF_SERVER_ADDR, "::")
+    config.setdefault(CONF_SERVER_PORT, "18886")
+    config.setdefault(CONF_SERVER_CERT, None)
+    config.setdefault(CONF_DEBUG_LEVEL, 0)
+    return True
 
 '''
 main
 '''
-if len(sys.argv) == 1:
-    print("ERROR: -c option is required.")
-    exit(1)
-httpd = TinyHTTPServer(LoRawanSuperSimpleASHandler, appname="lrwssas")
+ap = ArgumentParser()
+ap.add_argument("config_file", metavar="CONFIG_FILE",
+                help="specify the config file.")
+ap.add_argument("-d", action="store_true", dest="debug",
+               help="enable debug mode.")
+ap.add_argument("-D", action="store_true", dest="log_stdout",
+               help="enable to show messages onto stdout.")
+opt = ap.parse_args()
+# get config.
 try:
-    httpd.set_config()
-    httpd.set_opt(CONF_DB_URL)
-    httpd.set_opt(CONF_SERV_PATH, required=False)
-    httpd.set_opt(CONF_APP_MAP, type=dict, default=None, required=False)
+    config = json.load(open(opt.config_file))
 except Exception as e:
-    print(e)
+    print("ERROR: {} read error. {}".format(opt.config_file, e))
     exit(1)
-# check the app_map
-if not httpd.config[CONF_APP_MAP]:
-    print("INFO: %s is not defined in the config." % CONF_APP_MAP)
-httpd.run()
-
+if not check_config(config):
+    print("ERROR: config error.")
+    exit(1)
+#
+set_logger(config, opt)
+#
+server_addr = config.get("server_addr")
+server_port = int(config.get("server_port"))
+server_cert = config.get("server_cert")
+server_scheme = "https" if server_cert else "http"
+logger.info("Starting {} listening on {}://{}:{}/"
+            .format(PROG_NAME, server_scheme, server_addr, server_port))
+#
+app.run(host=server_addr, port=server_port,
+        server=GeventServer, quiet=True, debug=False,
+        certfile=server_cert)
