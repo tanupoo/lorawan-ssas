@@ -3,6 +3,10 @@
 from __future__ import print_function
 
 from app_util import default_logger
+'''
+# if you use the default mongodb.
+from parser_thru import parser as parser_thru
+'''
 
 class parser():
 
@@ -20,14 +24,22 @@ class parser():
         return None
 
     def __init__(self, **kwargs):
-        # e.g. open a session to a database.
-        # kwargs should contain: logger, debug_level
+        '''
+        e.g. open a session to a database.
+        kwargs should contain: logger, debug_level
+        '''
         self.logger = kwargs.get("logger", default_logger)
         self.debug_level = kwargs.get("debug_level", 0)
 
     def submit(self, kv_data, **kwargs):
         '''
-        - submit the data into a database such as mongodb or sqlite3.
+        submit the data into a database such as mongodb or sqlite3.
         '''
-        pass
+        '''
+        # you can use the following code to submit data into the default
+        # mongodb.
+        p = parser_thru(logger=self.logger, debug_level=self.debug_level)
+        p.submit(kv_data)
+        '''
+        return True
 

@@ -6,7 +6,7 @@ import sys
 import time
 import struct
 from app_util import default_logger
-from parser_thru import parser
+from parser_thru import parser as parser_thru
 
 def unixtime_hexstr_to_iso8601(src):
     return time.strftime("%Y-%m-%dT%H:%M:%S+0000",
@@ -58,8 +58,9 @@ class parser():
         self.debug_level = kwargs.get("debug_level", 0)
 
     def submit(self, kv_data, **kwargs):
-        p = parser(logger=self.logger, debug_level=self.debug_level)
+        p = parser_thru(logger=self.logger, debug_level=self.debug_level)
         p.submit(kv_data)
+        return True
 
 '''
 test code
