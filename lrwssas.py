@@ -239,6 +239,10 @@ server_scheme = "https" if server_cert else "http"
 logger.info("Starting {} listening on {}://{}:{}/"
             .format(PROG_NAME, server_scheme, server_addr, server_port))
 #
-app.run(host=server_addr, port=server_port,
-        server=GeventServer, quiet=True, debug=False,
-        certfile=server_cert)
+if server_cert:
+    app.run(host=server_addr, port=server_port,
+            certfile=server_cert,
+            server=GeventServer, quiet=True, debug=False)
+else:
+    app.run(host=server_addr, port=server_port,
+            server=GeventServer, quiet=True, debug=False)
