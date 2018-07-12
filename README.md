@@ -50,7 +50,7 @@ For this, You have to specify "rest = true" in the mongodb.conf.
 To check whether your mongodb can have REST API,
 you can use the following command for example.
 
-    curl -d '{"a":1}' http://localhost:28017/aaa/
+    curl -d '{"a":1}' http://localhost:28017/test_db/test_col/
 
 If your configuration is correct, you can get a response like below:
 
@@ -77,7 +77,7 @@ server_port: specify the port number of the HTTP server to be bound.
     {
         "debug_level": 0,
         "server_ip": "127.0.0.1",
-        "server_port": "51225",
+        "server_port": "8443",
         "db_url": "http://127.0.0.1:28717/lorawan/app/",
         "app_map": {
             "BEEF0D0000000001" : "HGA_HGOK_IoT_SN13",
@@ -87,7 +87,8 @@ server_port: specify the port number of the HTTP server to be bound.
 
 ## How to test
 
-    % curl -d '@test-data.json' http://localhost:51225/
+    % curl -v -k -H 'Content-Type: application/json' \
+          -d '@test-data.json' http://localhost:8443/
 
 ## security considerations
 

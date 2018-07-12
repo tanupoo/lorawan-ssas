@@ -1,14 +1,19 @@
 {
     "debug_level": 0,
-    "server_addr": "127.0.0.1",
-    "server_port": "51225",
-    "db_url": "http://127.0.0.1:28017/lorawan/app/",
-    "app_map": {
-        "BEEF0D0000000001" : "HGA_HGOK_IoT_SN13",
-        "1000000000000001" : "HGA_HGOK_IoT_SN13",
-        "2000000000000002" : "HGA_HGOK_IoT_SN13",
-        "3000000000000003" : "HGA_HGOK_IoT_SN13",
-        "000DB53114683543" : "GLOBALSAT_TL_100",
-        "0000000000810521" : "LORA_MOTE"
+    "log_file": "lrwssas.log",
+    "server_addr": "",
+    "server_port": "18886",
+    "server_cert": "",
+    "app_type": {
+        "BEEF0D0000000001" : "HGA_HGOKIOTSN13",
+        "000DB53114683543" : "GLOBALSAT_TL100",
+        "000064FFFEFFFFF1" : "YOKOGAWA_XS770A",
+        "BEEF020000001103" : "THRU",
+        "0000000000810521" : "THRU"
+    },
+    "app_parser": {
+        "HGA_HGOKIOTSN13": "app_parser.parser_hga_hgokiotsn13",
+        "GLOBALSAT_TL100": "app_parser.parser_globalsat_tl100",
+        "YOKOGAWA_XS770A": "app_parser.parser_yokogawa_xs770a"
     }
 }

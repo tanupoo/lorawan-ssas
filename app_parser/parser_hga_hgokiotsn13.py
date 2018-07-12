@@ -5,17 +5,8 @@ from __future__ import print_function
 import sys
 import time
 import struct
-
-class default_logger():
-    @classmethod
-    def error(s):
-        print("ERROR:", s)
-    @classmethod
-    def info(s):
-        print("INFO:", s)
-    @classmethod
-    def debug(s):
-        print("DEBUG:", s)
+from app_util import default_logger
+from parser_thru import parser
 
 def unixtime_hexstr_to_iso8601(src):
     return time.strftime("%Y-%m-%dT%H:%M:%S+0000",
@@ -27,7 +18,7 @@ def ieee754_hexstr_to_float(src):
 
 class parser():
     '''
-    payload: application data in hex string.
+    hex_string: application data in hex string.
     HGA sensor message format:
         byte: description
         2: battery level (0~254, 0: external powered) mV?
@@ -43,24 +34,32 @@ class parser():
         1: RFU
     '''
     @classmethod
-    def parse(cls, payload, logger=default_logger):
+    def parse(cls, hex_string):
 
-        if len(payload) != 48:
-            logger.error("the payload length is not 48.")
+        if len(hex_string) != 48:
+            print("the payload length is not 48.")
             return {}
 
         return {
-            "utc_time": unixtime_hexstr_to_iso8601(payload[8:16]),
-            "temperature": "%d" % int(payload[4:8], 16),
-            "latitude": "%.6f" % ieee754_hexstr_to_float(payload[16:24]),
-            "longitude": "%.6f" % ieee754_hexstr_to_float(payload[24:32]),
-            "altitude": "%.2f" % float(int(payload[32:36], 16) / 10),
-            "speed": "%.2f" % float(int(payload[36:40], 16) / 10),
-            "gyro_x": "%d" % int(payload[40], 16),
-            "gyro_y": "%d" % int(payload[42], 16),
-            "gyro_z": "%d" % int(payload[44], 16),
-            "battery_level": "%d" % int(payload[0:4], 16)
+            "utc_time": unixtime_hexstr_to_iso8601(hex_string[8:16]),
+            "temperature": int(hex_string[4:8],16),
+            "latitude": round(ieee754_hexstr_to_float(hex_string[16:24]),6),
+            "longitude": round(ieee754_hexstr_to_float(hex_string[24:32]),6),
+            "altitude": round(int(hex_string[32:36],16)/10.,2),
+            "speed": round(int(hex_string[36:40],16)/10.,2),
+            "gyro_x": int(hex_string[40],16),
+            "gyro_y": int(hex_string[42],16),
+            "gyro_z": int(hex_string[44],16),
+            "battery_level": int(hex_string[0:4],16)
             }
+
+    def __init__(self, **kwargs):
+        self.logger = kwargs.get("logger", default_logger)
+        self.debug_level = kwargs.get("debug_level", 0)
+
+    def submit(self, kv_data, **kwargs):
+        p = parser(logger=self.logger, debug_level=self.debug_level)
+        p.submit(kv_data)
 
 '''
 test code

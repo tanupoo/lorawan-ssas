@@ -3,21 +3,11 @@
 from __future__ import print_function
 
 import sys
-
-class default_logger():
-    @classmethod
-    def error(s):
-        print("ERROR:", s)
-    @classmethod
-    def info(s):
-        print("INFO:", s)
-    @classmethod
-    def debug(s):
-        print("DEBUG:", s)
+from app_util import default_logger
 
 class parser():
     '''
-    payload: application data in hex string.
+    hex_string: application data in hex string.
          0                   1                   2                   3
          0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -35,33 +25,45 @@ class parser():
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     '''
     @classmethod
-    def parse(cls, payload, logger=default_logger):
+    def parse(cls, hex_string, logger=default_logger):
     
-        if len(payload) != 24:
-            print("ERROR: the payload length is not 24.")
+        if len(hex_string) != 24:
+            print("ERROR: the hex_string length is not 24.")
             return {}
     
-        h = int(payload[0],16)
+        h = int(hex_string[0],16)
         #
-        shade_or_not = int(payload[1:16],16)
+        shade_or_not = int(hex_string[1:16],16)
         s = []
         for i in range(60):
             s.append("1" if shade_or_not&1 == 0 else "0")
             shade_or_not >>= 1
         shaded = "".join(reversed(s))
         #
-        temp_sign = 1 if int(payload[16],16)&0x8 == 0 else -1
-        temp = (int(payload[16:18],16)&0x7f) + int(payload[18:20],16)/100
+        temp_sign = 1 if int(hex_string[16],16)&0x8 == 0 else -1
+        temp = (int(hex_string[16:18],16)&0x7f) + int(hex_string[18:20],16)/100
         temp *= temp_sign
         #
-        humid = int(payload[20:22],16) + int(payload[22:24],16)/100
+        humid = int(hex_string[20:22],16) + int(hex_string[22:24],16)/100
         #
         return {
-            "H": "%d" % h,
-            "shaded": "%s" % shaded,
-            "temp": "%.2f" % temp,
-            "humid": "%.2f" % humid
+            "H": h,
+            "shaded": shaded,
+            "temp": float(temp),
+            "humid": float(humid)
             }
+
+    def __init__(self, **kwargs):
+        # e.g. open a session to a database.
+        # kwargs should contain: logger, debug_level
+        self.logger = kwargs.get("logger", default_logger)
+        self.debug_level = kwargs.get("debug_level", 0)
+
+    def submit(self, kv_data, **kwargs):
+        '''
+        - submit the data into a database such as mongodb or sqlite3.
+        '''
+        pass
 
 '''
 test code
