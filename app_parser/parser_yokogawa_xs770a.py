@@ -106,13 +106,15 @@ class parser():
         if self.cur is not None:
             self.cur.execute("""\
 create table if not exists app_data \
-    (ts, rssi, snr, accel, velocity, temp)""")
+    (ts, deveui, rssi, snr, accel, velocity, temp)""")
 
     def submit(self, kv_data, **kwargs):
+        print("xxx", kv_data)
         app_data = kv_data["DevEUI_uplink"]["__app_data"]
         if app_data["data_type"] not in [0x10, 0x11]:
             return None
         app_data["ts"] = kv_data["DevEUI_uplink"]["Time"]
+        app_data["deveui"] = kv_data["DevEUI_uplink"]["DevEUI"]
         app_data["rssi"] = kv_data["DevEUI_uplink"]["LrrRSSI"]
         app_data["snr"] =  kv_data["DevEUI_uplink"]["LrrSNR"]
         #
@@ -120,8 +122,8 @@ create table if not exists app_data \
             self.logger.debug("app_data =", app_data)
         #
         self.cur.execute("""\
-insert into app_data(ts, rssi, snr, accel, velocity, temp) \
-    values (:ts, :rssi, :snr, :accel, :velocity, :temp)""",
+insert into app_data(ts, deveui, rssi, snr, accel, velocity, temp) \
+    values (:ts, :deveui, :rssi, :snr, :accel, :velocity, :temp)""",
             app_data)
         self.con.commit()
         #
