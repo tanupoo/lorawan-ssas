@@ -12,10 +12,16 @@ into JSON data.
 
 ### Python modules
 
-- httplib2
 - dateutils
 - gevent
 - bottle
+
+In the Linux distributions, you may install further modules.
+
+The gevent 1.3 breaks the bottle binding.
+You have to install gevent 1.2.2 instead.
+
+    pip install gevent==1.2.2
 
 ### Depending on your configuration.
 
