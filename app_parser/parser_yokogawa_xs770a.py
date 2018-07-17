@@ -7,6 +7,8 @@ import sys
 from binascii import a2b_hex
 from struct import unpack
 from app_util import default_logger
+import dateutil.parser
+import dateutil.tz
 
 # the specification are in the following document.
 # https://www.yokogawa.co.jp/solutions/solutions/iiot/maintenance/sushi-sensor-j/#%E3%83%89%E3%82%AD%E3%83%A5%E3%83%A1%E3%83%B3%E3%83%88%EF%BC%86%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89
@@ -106,14 +108,20 @@ class parser():
         if self.cur is not None:
             self.cur.execute("""\
 create table if not exists app_data \
-    (ts, deveui, rssi, snr, accel, velocity, temp)""")
+    (ts datetime, deveui text, \
+     rssi real, snr real, accel real, velocity real, temp \
+     real)""")
 
     def submit(self, kv_data, **kwargs):
-        print("xxx", kv_data)
         app_data = kv_data["DevEUI_uplink"]["__app_data"]
+        if app_data is None:
+            return None
         if app_data["data_type"] not in [0x10, 0x11]:
             return None
-        app_data["ts"] = kv_data["DevEUI_uplink"]["Time"]
+        ts = kv_data["DevEUI_uplink"]["Time"]
+        dt = dateutil.parser.parse(ts)
+        dt = dt.astimezone(dateutil.tz.gettz("Asia/TZ"))
+        app_data["ts"] = dt.isoformat(sep=" ", timespec="milliseconds")
         app_data["deveui"] = kv_data["DevEUI_uplink"]["DevEUI"]
         app_data["rssi"] = kv_data["DevEUI_uplink"]["LrrRSSI"]
         app_data["snr"] =  kv_data["DevEUI_uplink"]["LrrSNR"]
