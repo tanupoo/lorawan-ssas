@@ -9,8 +9,24 @@ into JSON data.
 ## Requirements
 
 - Python 3 is required.  Python 2.x is not tested well.
-- Python httplib2 and dateutils module are required.
+
+### Python modules
+
+- httplib2
+- dateutils
+- gevent
+- bottle
+
+### Depending on your configuration.
+
 - mongodb is required, at least 2.4.9 or later.
+- requests
+- sqlite3 is required,
+
+In the Linux distributions, sqlite3 may not be installed initially and
+your python may not sadly support sqlite3.
+In this case, you have to install sqlite3-dev by your self
+**before** you install python.  Otherwise, it is failed to import sqlite3.
 
 ## Limitations
 
