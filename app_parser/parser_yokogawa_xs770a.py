@@ -12,7 +12,7 @@ import dateutil.tz
 # the specification are in the following document.
 # https://www.yokogawa.co.jp/solutions/solutions/iiot/maintenance/sushi-sensor-j/#%E3%83%89%E3%82%AD%E3%83%A5%E3%83%A1%E3%83%B3%E3%83%88%EF%BC%86%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89
 
-# it is to ignore import error for just parsing the payload.
+# to ignore the import error for the purpose of just parsing the payload.
 try:
     import sqlite3
 except:
