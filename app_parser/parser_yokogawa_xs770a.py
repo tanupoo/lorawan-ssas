@@ -3,7 +3,6 @@
 from __future__ import print_function
 
 import sys
-
 from binascii import a2b_hex
 from struct import unpack
 from app_util import default_logger
