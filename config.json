@@ -16,23 +16,23 @@
     },
     "handlers": {
         "HGA_HGOKIOTSN13": {
-            "module": "parser_hga_hgokiotsn13",
+            "module": "handler_hga_hgokiotsn13",
             "db_uri": "http://127.0.0.1:28017/lorawan/envmon/"
         },
         "GLOBALSAT_TL100": {
-            "module": "parser_globalsat_tl100",
+            "module": "handler_globalsat_tl100",
             "db_uri": "http://127.0.0.1:28017/lorawan/tacker/"
         },
         "YOKOGAWA_XS770A": {
-            "module": "parser_yokogawa_xs770a",
+            "module": "handler_yokogawa_xs770a",
             "db_name": "/var/db/lorawan/xs770a.db"
         },
         "HOKU01": {
-            "module": "parser_hoku01",
+            "module": "handler_hoku01",
             "db_name": "hoge.db"
         },
         "THRU": {
-            "module": "parser_thru",
+            "module": "handler_thru",
             "db_uri": "http://127.0.0.1:28017/lorawan/app/"
         }
     }
