@@ -118,7 +118,7 @@ def proc_tp_uplink(kv_data):
     '''
     if kv_payload is None:
         pass
-    elif kv_payload is not True:
+    elif kv_payload is False:
         # if kv_payload is False variants except of None, then error.
         logger.error("Parsing payload for DevEUI {} failed.".format(deveui))
         return 400  # bad request.
