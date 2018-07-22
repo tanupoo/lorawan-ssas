@@ -55,7 +55,7 @@ class handler(connector_sqlite3):
 
     def create_db(self, **kwargs):
         self.cur.execute("""
-                         create table if not exists app_data (
+                         create table if not exists hoku01_data (
                             ts datetime,
                             deveui text,
                             rssi real,
@@ -85,7 +85,7 @@ class handler(connector_sqlite3):
         app_data["shaded_count"] = app_data["shaded"].count("0")
         #
         self.cur.execute("""
-                         insert into app_data (
+                         insert into hoku01_data (
                             ts, deveui, rssi, snr, temp, humid, shaded_count)
                          values (
                             :ts, :deveui, :rssi, :snr,

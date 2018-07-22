@@ -89,7 +89,7 @@ class handler(connector_sqlite3):
 
     def create_db(self, **kwargs):
         self.cur.execute("""
-                         create table if not exists app_data (
+                         create table if not exists xs770a_data (
                             ts datetime,
                             deveui text,
                             rssi real,
@@ -118,7 +118,7 @@ class handler(connector_sqlite3):
             self.logger.debug("app_data =", app_data)
         #
         self.cur.execute("""
-                         insert into app_data (
+                         insert into xs770a_data (
                             ts, deveui, rssi, snr, accel, velocity, temp)
                          values (
                             :ts, :deveui, :rssi, :snr,
