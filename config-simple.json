@@ -1,0 +1,13 @@
+{
+    "log_file": "lrwssas.log",
+    "server_port": "18886",
+    "app_type": {
+        "BEEF0D0000000001" : "THRU"
+    },
+    "handlers": {
+        "THRU": {
+            "module": "app_parser.parser_thru",
+            "db_uri": "http://127.0.0.1:28017/lorawan/app/"
+        }
+    }
+}
