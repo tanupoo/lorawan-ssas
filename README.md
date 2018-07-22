@@ -91,37 +91,6 @@ server_ip: specify the IP address of the HTTP server to be bound.
 server_port: specify the port number of the HTTP server to be bound.
 server_cert: (option) specify the filename including the server's certificate.
 
-    {
-        "debug_level": 0,
-        "log_file": "lrwssas.log",
-        "server_addr": "",
-        "server_port": "18886",
-        "server_cert": "",
-        "app_type": {
-            "BEEF0D0000000001" : "HGA_HGOKIOTSN13",
-            "000DB53114683543" : "GLOBALSAT_TL100",
-            "000064FFFEFFFFF1" : "YOKOGAWA_XS770A",
-            "BEEF020000001103" : "THRU",
-            "0000000000810521" : "THRU"
-        },
-        "handlers": {
-            "HGA_HGOKIOTSN13": {
-                "module": "handlers.parser_hga_hgokiotsn13",
-            },
-            "GLOBALSAT_TL100": {
-                "module": "handlers.parser_globalsat_tl100",
-            },
-            "YOKOGAWA_XS770A": {
-                "module": "handlers.parser_yokogawa_xs770a",
-                "db_name": "/var/db/lorawan/xs770a.db",
-            },
-            "THRU": {
-                "module": "handlers.parser_thru",
-                "db_name": "http://127.0.0.1:28717/lorawan/app/",
-            }
-        }
-    }
-
 ## How to run
 
 ### MongoDB
