@@ -79,7 +79,7 @@ class handler(connector_sqlite3):
         app_data["rssi"] = kv_data["LrrRSSI"]
         app_data["snr"] =  kv_data["LrrSNR"]
         if self.debug_level > 0:
-            self.logger.debug("app_data =", app_data)
+            self.logger.debug("app_data = {}".format(app_data))
         #
         # count the shaded.
         app_data["shaded_count"] = app_data["shaded"].count("0")
