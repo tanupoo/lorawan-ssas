@@ -6,7 +6,7 @@
     },
     "handlers": {
         "THRU": {
-            "module": "app_parser.parser_thru",
+            "module": "parser_thru",
             "db_uri": "http://127.0.0.1:28017/lorawan/app/"
         }
     }

@@ -9,11 +9,25 @@
         "000DB53114683543" : "GLOBALSAT_TL100",
         "000064FFFEFFFFF1" : "YOKOGAWA_XS770A",
         "BEEF020000001103" : "THRU",
+        "BEEF0D0000000001" : "THRU",
         "0000000000810521" : "THRU"
     },
-    "app_parser": {
-        "HGA_HGOKIOTSN13": "app_parser.parser_hga_hgokiotsn13",
-        "GLOBALSAT_TL100": "app_parser.parser_globalsat_tl100",
-        "YOKOGAWA_XS770A": "app_parser.parser_yokogawa_xs770a"
+    "handlers": {
+        "HGA_HGOKIOTSN13": {
+            "module": "parser_hga_hgokiotsn13",
+            "db_uri": "http://127.0.0.1:28017/lorawan/envmon/"
+        },
+        "GLOBALSAT_TL100": {
+            "module": "parser_globalsat_tl100",
+            "db_uri": "http://127.0.0.1:28017/lorawan/tacker/"
+        },
+        "YOKOGAWA_XS770A": {
+            "module": "parser_yokogawa_xs770a",
+            "db_name": "/var/db/lorawan/xs770a.db"
+        },
+        "THRU": {
+            "module": "parser_thru",
+            "db_uri": "http://127.0.0.1:28017/lorawan/app/"
+        }
     }
 }

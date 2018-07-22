@@ -3,10 +3,9 @@
 from __future__ import print_function
 
 import sys
-from app_util import default_logger
-from parser_thru import parser as parser_thru
+from connector_sqlite3 import connector_sqlite3
 
-class parser():
+class handler(connector_sqlite3):
     '''
     hex_string: application data in hex string.
          0                   1                   2                   3
@@ -26,11 +25,11 @@ class parser():
         +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     '''
     @classmethod
-    def parse(cls, hex_string, logger=default_logger):
+    def parse(cls, hex_string):
     
         if len(hex_string) != 24:
             print("ERROR: the hex_string length is not 24.")
-            return {}
+            return False
     
         h = int(hex_string[0],16)
         #
@@ -54,13 +53,47 @@ class parser():
             "humid": float(humid)
             }
 
-    def __init__(self, **kwargs):
-        self.logger = kwargs.get("logger", default_logger)
-        self.debug_level = kwargs.get("debug_level", 0)
+    def create_db(self, **kwargs):
+        self.cur.execute("""
+                         create table if not exists app_data (
+                            ts datetime,
+                            deveui text,
+                            rssi real,
+                            snr real,
+                            temp real,
+                            humid real,
+                            shaded_count number
+                         )""")
 
-    def submit(self, kv_data, **kwargs):
-        p = parser_thru(logger=self.logger, debug_level=self.debug_level)
-        p.submit(kv_data)
+    def insert_db(self, kv_data, **kwargs):
+        '''
+        a record inserted into a database is like below:
+        xxx
+        '''
+        app_data = kv_data["__app_data"]
+        if app_data is None:
+            self.logger.error("the payload haven't been parsed.")
+            return False
+        app_data["ts"] = self.fix_ts(kv_data["Time"])
+        app_data["deveui"] = kv_data["DevEUI"]
+        app_data["rssi"] = kv_data["LrrRSSI"]
+        app_data["snr"] =  kv_data["LrrSNR"]
+        if self.debug_level > 0:
+            self.logger.debug("app_data =", app_data)
+        #
+        # count the shaded.
+        app_data["shaded_count"] = app_data["shaded"].count("0")
+        #
+        self.cur.execute("""
+                         insert into app_data (
+                            ts, deveui, rssi, snr, temp, humid, shaded_count)
+                         values (
+                            :ts, :deveui, :rssi, :snr,
+                            :temp, :humid, :shaded_count)
+                         """, app_data)
+        self.con.commit()
+        if self.debug_level > 0:
+            self.logger.debug("submitting app_data into sqlite3 succeeded.")
         return True
 
 '''

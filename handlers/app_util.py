@@ -24,3 +24,40 @@ class default_logger():
     def debug(cls, s):
         print("DEBUG:", s)
 
+from datetime import datetime
+import dateutil.tz
+import dateutil.parser
+
+def iso8601_to_ms(s, tz="GMT"):
+    '''
+    tz is a default timezone. If the string looks a naive dateime string,
+    it is converted into the aware datetime object with the tz string.
+    '''
+    default_tzinfo = dateutil.tz.gettz(tz)
+    # convert the string into a datetime object.
+    dt = dateutil.parser.parse(s)
+    if dt.tzinfo is None or dt.tzinfo.utcoffset(dt) == None:
+        # if naive, or if the UTC offset isn't known,
+        # convert it into the aware datetime object.
+        dt = dt.replace(tzinfo=default_tzinfo)
+    # seconds from epoch (01-Jan-1970 00:00:00 in the dt's timezone)
+    epoch = datetime(1970, 1, 1, tzinfo=dt.tzinfo)
+    ts = int((dt.astimezone(dt.tzinfo) - epoch).total_seconds())
+    # seconds to milliseconds
+    return int(1000*ts + dt.microsecond/1000)
+
+def iso8601_to_fixed_ts(ts, tz):
+    '''
+    the format of datetime string in Timestamp(ISO) of export.csv is
+    like below:
+        "2018-07-10T07:02:53.917Z"
+    it needs to convert into a local time
+    as it is likely a JSON-like object from TP.
+        "2018-07-10T16:02:53.917+09:00"
+    and, the superset recoginizes below format:
+        "2018-07-10 16:02:53.917+09:00"
+    '''
+    dt = dateutil.parser.parse(ts)
+    dt = dt.astimezone(dateutil.tz.gettz(tz))
+    return dt.isoformat(sep=" ", timespec="milliseconds")
+

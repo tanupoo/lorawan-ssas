@@ -5,8 +5,7 @@ from __future__ import print_function
 import sys
 import time
 import struct
-from app_util import default_logger
-from parser_thru import parser as parser_thru
+from connector_mongodb import connector_mongodb
 
 def unixtime_hexstr_to_iso8601(src):
     return time.strftime("%Y-%m-%dT%H:%M:%S+0000",
@@ -16,7 +15,7 @@ def ieee754_hexstr_to_float(src):
     v = struct.pack(">l", int(src, 16))
     return struct.unpack(">f", v)[0]
 
-class parser():
+class handler(connector_mongodb):
     '''
     hex_string: application data in hex string.
     HGA sensor message format:
@@ -38,7 +37,7 @@ class parser():
 
         if len(hex_string) != 48:
             print("the payload length is not 48.")
-            return {}
+            return False
 
         return {
             "utc_time": unixtime_hexstr_to_iso8601(hex_string[8:16]),
@@ -52,15 +51,6 @@ class parser():
             "gyro_z": int(hex_string[44],16),
             "battery_level": int(hex_string[0:4],16)
             }
-
-    def __init__(self, **kwargs):
-        self.logger = kwargs.get("logger", default_logger)
-        self.debug_level = kwargs.get("debug_level", 0)
-
-    def submit(self, kv_data, **kwargs):
-        p = parser_thru(logger=self.logger, debug_level=self.debug_level)
-        p.submit(kv_data)
-        return True
 
 '''
 test code

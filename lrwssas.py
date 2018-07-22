@@ -24,9 +24,10 @@ KEY_PAYLOAD_HEX = "payload_hex"
 KEY_DEVEUI = "DevEUI"
 KEY_APP_DATA = "__app_data"
 
+CONF_MODULE_PATH = "module_path"
+CONF_MODULE = "module"
 CONF_APP_TYPE = "app_type"
-CONF_APP_TYPE_TRHU = "THRU"
-CONF_APP_PARSER = "app_parser"
+CONF_HANDLERS = "handlers"
 CONF_SERVER_ADDR = "server_addr"
 CONF_SERVER_PORT = "server_port"
 CONF_SERVER_CERT = "server_cert"
@@ -39,7 +40,7 @@ LOG_DATE_FMT = "%Y-%m-%dT%H:%M:%S"
 
 app = Bottle()
 logger = logging.getLogger(PROG_NAME)
-parser_mod_map = {}
+handler_map = {}
 
 @app.route("/up", method="POST")
 def app_up():
@@ -62,34 +63,36 @@ def app_up():
         logger.error("{}: {}".format(emsg, e))
         abort(404, emsg)
     #
-    ret = proc_tp_uplink(kv_data)
+    kv_root = kv_data.get(KEY_TOPOBJ)
+    if not kv_root:
+        emsg = "Key {} does not exist in the request.".format(KEY_TOPOBJ)
+        logger.error("{}".format(emsg))
+        abort(404, emsg)
+    #
+    ret = proc_tp_uplink(kv_root)
     if ret:
         abort(ret)
+    return "OK"
 
 def proc_tp_uplink(kv_data):
     '''
     kv_data is a Python object, which is seriaized of the JSON-like string
-    sent by a TP NS.
+    of KEY_TOPOBJ sent by a TP NS.
     assuming that all required keys exist in the config.
     '''
-    # get the root object
-    kv_root = kv_data.get(KEY_TOPOBJ)
-    if not kv_root:
-        logger.error("Key {} does not exist in the request.".format(KEY_TOPOBJ))
-        return 400  # bad request.
     # get deveui
-    deveui = kv_root.get(KEY_DEVEUI)
+    deveui = kv_data.get(KEY_DEVEUI)
     if not deveui:
         logger.error("Key {} does not exist in the request.".format(KEY_DEVEUI))
         return 400  # bad request.
     # get payload_hex
-    payload_hex = kv_root.get(KEY_PAYLOAD_HEX)
+    payload_hex = kv_data.get(KEY_PAYLOAD_HEX)
     if not payload_hex:
         logger.error("Key {} does not exist in the request."
                      .format(KEY_PAYLOAD_HEX))
         return 400  # bad request.
     # get time, for processing later.
-    kv_time = kv_root.get(KEY_TIME)
+    kv_time = kv_data.get(KEY_TIME)
     if not kv_time:
         logger.error("key {} does not exist in the request.".format(KEY_TIME))
         return 400  # bad request.
@@ -102,36 +105,28 @@ def proc_tp_uplink(kv_data):
         logger.error("DevEUI {} is not defined in the config.".format(deveui))
         return 403  # not found.
     '''
-    if app_type is CONF_APP_TYPE_TRHU, the payload will not be converted.
-    Otherwise, call parser.parse() and it will convert the
-    try to parse the payload and convert into a Python dict object.
+    call parser.parse() to try converting the payload_hex.
+    if succeeded, it is set into KEY_APP_DATA.
     '''
-    if app_type != CONF_APP_TYPE_TRHU:
-        app_parser = config[CONF_APP_PARSER][app_type]
-        parser = parser_mod_map[app_parser]
-        kv_payload = None
-        try:
-            kv_payload = parser.parse(payload_hex)
-        except AttributeError:
-            # just ignore if the parser class doesn't have parse() method.
-            pass
-        '''
-        return value of parser.paser():
-            None: ignore parsing.
-            False: something error.
-            Others: a Python dict should be put in KEY_APP_DATA.
-        '''
-        if kv_payload is None:
-            pass
-        elif not kv_payload:
-            # if kv_payload is False variants except of None, then error.
-            logger.error("Parsing payload for DevEUI {} failed.".format(deveui))
-            return 400  # bad request.
-        else:
-            # add __app_data
-            kv_data[KEY_TOPOBJ][KEY_APP_DATA] = kv_payload
+    handler = handler_map[app_type]
+    kv_payload = handler.parse(payload_hex)
+    '''
+    return value of parser.paser():
+        None: ignore parsing.
+        False: something error.
+        Others: a Python dict should be put in KEY_APP_DATA.
+    '''
+    if kv_payload is None:
+        pass
+    elif kv_payload is not True:
+        # if kv_payload is False variants except of None, then error.
+        logger.error("Parsing payload for DevEUI {} failed.".format(deveui))
+        return 400  # bad request.
+    else:
+        # add __app_data
+        kv_data[KEY_APP_DATA] = kv_payload
     #
-    parser.submit(kv_data)
+    handler.db_submit(kv_data)
     return 0
 
 def log_common(request):
@@ -161,17 +156,21 @@ def set_logger(config):
         logger.setLevel(logging.INFO)
 
 def check_config(config):
+    # set PYTHONPATH
+    sys.path.append("./handlers")
+    for i in config.get(CONF_MODULE_PATH, []):
+        sys.path.append(i)
     # check if the app_type key exists.
     app_type_map = config.get(CONF_APP_TYPE)
     if not app_type_map:
         print("ERROR: Key {} does not exist in the config."
               .format(CONF_APP_TYPE))
         return False
-    # check if the app_parser key exists.
-    app_parser_map = config.get(CONF_APP_PARSER)
-    if not app_parser_map:
+    # check if the handlers key exists.
+    handlers = config.get(CONF_HANDLERS)
+    if not handlers:
         print("ERROR: Key {} does not exist in the config."
-              .format(CONF_PARSER_TYPE))
+              .format(CONF_HANDLERS))
         return False
     #
     config.setdefault(CONF_SERVER_ADDR, "::")
@@ -181,26 +180,26 @@ def check_config(config):
     # overwrite the debug level if opt.debug is True.
     if config[CONF_OPT_DEBUG] == True and config[CONF_DEBUG_LEVEL] == 0:
         config[CONF_DEBUG_LEVEL] = 99
-    # check if the parser is defined.
-    # if app_type is CONF_APP_TYPE_TRHU, it's out of scope.
-    # if parser.submit is not defined, it will be submitted into MongoDB.
-    # NOTE: this should be placed at the end of these check so that it can pass
-    # the whole parameters in config to the parsers..
+    # NOTE: below check should be placed at the end of this method.
+    # check if the handlers are properly defined.
+    # if parser.db_submit is not defined, it will be submitted into MongoDB.
     for k,v in app_type_map.items():
-        if v == CONF_APP_TYPE_TRHU:
-            continue
-        app_parser = app_parser_map.get(v)
-        if not app_parser:
-            print("ERROR: Parser for {} is not defined in the config."
+        handler = handlers.get(v)
+        if not handler:
+            print("ERROR: the handler for {} is not defined in the config."
                   .format(k))
             return False
+        mod_name = handler.get(CONF_MODULE)
+        if mod_name is None:
+            print("ERROR: Key {} is not defined.".format(CONF_MODULE))
+            return False
         try:
-            mod = import_module(app_parser)
-            #parser_mod_map[app_parser] = mod.parser(kwargs)
-            parser_mod_map[app_parser] = mod.parser(logger=logger,
-                                        debug_level=config[CONF_DEBUG_LEVEL])
+            mod = import_module(mod_name)
+            handler_map[v] = mod.handler(logger=logger,
+                                         debug_level=config[CONF_DEBUG_LEVEL],
+                                         **handler)
         except Exception as e:
-            print("ERROR: import {} failed. {}".format(app_parser, e))
+            print("ERROR: import {} failed. {}".format(mod_name, e))
             return False
     return True
 
@@ -215,8 +214,6 @@ ap.add_argument("-d", action="store_true", dest="debug",
 ap.add_argument("-D", action="store_true", dest="log_stdout",
                help="enable to show messages onto stdout.")
 opt = ap.parse_args()
-#
-sys.path.append("./app_parser")
 # get config.
 try:
     config = json.load(open(opt.config_file))
@@ -227,7 +224,7 @@ except Exception as e:
 config[CONF_OPT_DEBUG] = opt.debug
 config[CONF_LOG_STDOUT] = opt.log_stdout
 if not check_config(config):
-    print("ERROR: config error.")
+    print("ERROR: error in {}.".format(opt.config_file))
     exit(1)
 #
 set_logger(config)

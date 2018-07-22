@@ -1,14 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function
-
 from app_util import default_logger
-'''
-# if you use the default mongodb.
-from parser_thru import parser as parser_thru
-'''
 
-class parser():
+class parser_template():
 
     @classmethod
     def parse(cls, hex_string):
@@ -30,16 +24,27 @@ class parser():
         '''
         self.logger = kwargs.get("logger", default_logger)
         self.debug_level = kwargs.get("debug_level", 0)
+        self.tz = kwargs.get("tz", "GMT")
+        self.db_init(**kwargs)
 
-    def submit(self, kv_data, **kwargs):
+    def db_init(self, **kwargs):
         '''
-        submit the data into a database such as mongodb or sqlite3.
+        TEMPLATE should be overwritten.
+        - initialize your database.
+        - the return value should be:
+            + False: something error.
+            + True: succeeded.
         '''
+        return True
+
+    def db_submit(self, **kwargs):
         '''
-        # you can use the following code to submit data into the default
-        # mongodb.
-        p = parser_thru(logger=self.logger, debug_level=self.debug_level)
-        p.submit(kv_data)
+        TEMPLATE should be overwritten.
+        - submit the data into your database such as mongodb or sqlite3.
+        - the return value should be:
+            + None: ignore parsing.
+            + False: something error.
+            + True: succeeded.
         '''
         return True
 

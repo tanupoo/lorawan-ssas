@@ -2,9 +2,8 @@ Super Simple LoRaWAN Application Server
 =======================================
 
 This is a super simple LoRaWAN AS (Application Server).
-It receives the application message and put the message into mongodb.
-If the application is well-known, it will decode the message of hex string
-into JSON data.
+It supports The JSON-like message from a network server via HTTP(S).
+And, it puts the application message into a database you specified.
 
 ## Requirements
 
@@ -18,16 +17,16 @@ into JSON data.
 
 In the Linux distributions, you may install further modules.
 
-The gevent 1.3 breaks the bottle binding.
-You have to install gevent 1.2.2 instead.
+Note that the gevent 1.3 breaks the bottle binding.
+You have to install the gevent 1.2.2 instead.
 
     pip install gevent==1.2.2
 
 ### Depending on your configuration.
 
-- mongodb is required, at least 2.4.9 or later.
-- requests
-- sqlite3 is required,
+- MongoDB, at least 2.4.9 or later.
+- requests to submit the application data into your MongoDB.
+- sqlite3
 
 In the Linux distributions, sqlite3 may not be installed initially and
 your python may not sadly support sqlite3.
@@ -38,38 +37,102 @@ In this case, you have to install sqlite3-dev by your self
 
 - Supports the JSON type message sent by Actility NS (Network Server).
 
-### Application Message Parser
+## Application Message Handler
 
-The message parser supports the folowing devices.
+The following message handlers are embedded.
 
 - Highgain Antenna HGOK IoT SN13
 - Globalsat LT-100
+- Yokogawa XS770A
 
-Other similiar message could be parsed.
-If you know your application message is similar to one of the devices supported.
-You can use the device type to decode your message.
-Otherwise, it is not decoded.
+You can add your handler.  Refer to the handler module.
 
 ## How to install
 
 To get the python code, you can use git command like below.
 
-    % git clone --recursive https://github.com/tanupoo/lorawan-ss-as.git
+    % git clone --recursive https://github.com/tanupoo/lorawan-ssas.git
 
 Then, you should change the directory.
 
-    % cd lorawan-ss-as
+    % cd lorawan-ssas
+
+## Configuration
+
+First, you have to define your application type of the DevEUI of your device
+in the app_type.
+And, you have to define the handler for the application type.
+At least, one record for each is required.
+
+## config-simple.json
+
+When you look at the content of config-simple.json,
+You can see THRU in both app_type and handlers.
+
+BEEF0D0000000001 is a DevEUI.
+When the server receives the message in which the DevEUI is BEEF0D0000000001.
+The server knows that the application type of the message is THRU.
+Then, the server passes the payload_hex into parser_thru.
+parser_thru doesn't parse the payload_hex actually.
+It just submits the data from NS into the MongoDB.
+When you take a look into the parser_thru, you can understand what it does.
+
+### Details
+
+The key app_type defines the mapping table from a DevEUI to a handler name.
+It must include at least one item.
+If you don't have your parser, you can use "THRU" for your device.
+
+The key handlers defines a set of parameters for the handler.
+It must include a key "module" and reserved.
+You can define other keys as you like and these keys are passed into the module.
+
+server_ip: specify the IP address of the HTTP server to be bound.
+server_port: specify the port number of the HTTP server to be bound.
+server_cert: (option) specify the filename including the server's certificate.
+
+    {
+        "debug_level": 0,
+        "log_file": "lrwssas.log",
+        "server_addr": "",
+        "server_port": "18886",
+        "server_cert": "",
+        "app_type": {
+            "BEEF0D0000000001" : "HGA_HGOKIOTSN13",
+            "000DB53114683543" : "GLOBALSAT_TL100",
+            "000064FFFEFFFFF1" : "YOKOGAWA_XS770A",
+            "BEEF020000001103" : "THRU",
+            "0000000000810521" : "THRU"
+        },
+        "handlers": {
+            "HGA_HGOKIOTSN13": {
+                "module": "handlers.parser_hga_hgokiotsn13",
+            },
+            "GLOBALSAT_TL100": {
+                "module": "handlers.parser_globalsat_tl100",
+            },
+            "YOKOGAWA_XS770A": {
+                "module": "handlers.parser_yokogawa_xs770a",
+                "db_name": "/var/db/lorawan/xs770a.db",
+            },
+            "THRU": {
+                "module": "handlers.parser_thru",
+                "db_name": "http://127.0.0.1:28717/lorawan/app/",
+            }
+        }
+    }
 
 ## How to run
 
-### mongodb
+### MongoDB
 
-You have to run mongodb to store data from the sensors.
+If you don't use MongoDB, you don't need this section.
+
 It should run in the same host on which lrwssas.py runs.
 The REST option is required.
 For this, You have to specify "rest = true" in the mongodb.conf.
 
-To check whether your mongodb can have REST API,
+To check whether your MongoDB can have REST API,
 you can use the following command for example.
 
     curl -d '{"a":1}' http://localhost:28017/test_db/test_col/
@@ -84,33 +147,38 @@ The port number 28017 may be different in your system.
 
 This is the main program.
 
-    % python lrwssas.py -c config.json
+    usage: lrwssas.py [-h] [-d] [-D] CONFIG_FILE
+    
+    positional arguments:
+      CONFIG_FILE  specify the config file.
+    
+    optional arguments:
+      -h, --help   show this help message and exit
+      -d           enable debug mode.
+      -D           enable to show messages onto stdout.
+
+you can simply start it.
+
+    % python lrwssas.py config.json
 
 if you want to see debug messages, consider to use the -d options like below.
 
-    % python lrwssas.py -c config.json -ddd
+    % python lrwssas.py config.json -d
 
-## configuration example
+## End point
 
-db_url: specify the end point to the mongodb.
-server_ip: specify the IP address of the HTTP server to be bound.
-server_port: specify the port number of the HTTP server to be bound.
-
-    {
-        "debug_level": 0,
-        "server_ip": "127.0.0.1",
-        "server_port": "8443",
-        "db_url": "http://127.0.0.1:28717/lorawan/app/",
-        "app_map": {
-            "BEEF0D0000000001" : "HGA_HGOK_IoT_SN13",
-            "000DB53114683543" : "GLOBALSAT_TL_100"
-        }
-    }
+- /up
+- /down (not yet)
 
 ## How to test
 
-    % curl -v -k -H 'Content-Type: application/json' \
-          -d '@test-data.json' http://localhost:8443/
+    % curl -v -H 'Content-Type: application/json' \
+          -d '@test-data.json' http://localhost:18886/up
+
+If you define server_cert, the server requires HTTPS connection.
+Therefore, you have to specify https:// instead of http://.
+If you specify a self-signed certificate for your server,
+You may add the -k option.
 
 ## security considerations
 
@@ -121,20 +189,6 @@ the port number of 80, 8080, or something like expectable ones
 should not be used.
 
 ## debugging
-
-### debug option
-
-If you turn on the debug mode, lrwssas shows the debug messages
-in the log file or stream you specified.
-To enable the debug mode,
-you can add the -d option or specify the debug_level in the config fie.
-The level 4 is most verbose.
-The -d option in the argument overwrites the level in the config file.
-
-### Tools
-
-pseudo-ns.py in the tools directory periodically sends a message
-assumed to be sent from a NS.
 
 ### mongodb
 
@@ -159,18 +213,18 @@ please wait a while until you will receive something.
 
 - show the list of DevEUI in the database.
 
-    > db.app.distinct("DevEUI_uplink.DevEUI")
+    > db.app.distinct("DevEUI")
 
 - show the latest 3 data in descending order for the DevEUI specified.
 
-    > db.app.find({"DevEUI_uplink.DevEUI":"DEADBEEF00112233"},{"_id":0}).sort({$natural:-1}).limit(3)
+    > db.app.find({"DevEUI":"DEADBEEF00112233"},{"_id":0}).sort({$natural:-1}).limit(3)
 
 - show the latest data of each DevEUI.
 
     > db.app.aggregate([
         { "$group": {
-            "_id":"$DevEUI_uplink.DevEUI",
-            "latest": { "$last":"$DevEUI_uplink" },
+            "_id":"$DevEUI",
+            "latest": { "$last":"$DevEUI" },
         }},
         { "$project": {
             "_id":0,

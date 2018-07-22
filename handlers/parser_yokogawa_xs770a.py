@@ -5,18 +5,10 @@ from __future__ import print_function
 import sys
 from binascii import a2b_hex
 from struct import unpack
-from app_util import default_logger
-import dateutil.parser
-import dateutil.tz
+from connector_sqlite3 import connector_sqlite3
 
 # the specification are in the following document.
 # https://www.yokogawa.co.jp/solutions/solutions/iiot/maintenance/sushi-sensor-j/#%E3%83%89%E3%82%AD%E3%83%A5%E3%83%A1%E3%83%B3%E3%83%88%EF%BC%86%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89
-
-# to ignore the import error for the purpose of just parsing the payload.
-try:
-    import sqlite3
-except:
-    pass
 
 def parse_x10(data):
     '''
@@ -74,7 +66,7 @@ data_tab = [
     { "data_type":0x43, "parser":parse_x43 },
     ]
 
-class parser():
+class handler(connector_sqlite3):
 
     @classmethod
     def parse(cls, hex_string):
@@ -89,51 +81,50 @@ class parser():
             return False
     
         # check whether it should be ignored.
-        # this is to compare a string of "None", not the None object.
+        # this is to compare a **string** of "None", not the None object.
         if hex_string == "None":
             return None
     
         return parse_data_type(a2b_hex(hex_string))
 
-    '''
-    {'status': b'\x00\x00', 'accel': 0.75830078125, 'velocity': 0.302734375,
-    'temp': 33.25, 'data_type': 16, 'Time': '2017-03-24T06:53:32.502+01:00'}
-    '''
-    def __init__(self, **kwargs):
-        self.logger = kwargs.get("logger", default_logger)
-        self.debug_level = kwargs.get("debug_level", 0)
-        self.con = sqlite3.connect("xs770a.db")
-        self.cur = self.con.cursor()
-        if self.cur is not None:
-            self.cur.execute("""\
-create table if not exists app_data \
-    (ts datetime, deveui text, \
-     rssi real, snr real, accel real, velocity real, temp \
-     real)""")
+    def create_db(self, **kwargs):
+        self.cur.execute("""
+                         create table if not exists app_data (
+                            ts datetime,
+                            deveui text,
+                            rssi real,
+                            snr real,
+                            accel real,
+                            velocity real,
+                            temp real
+                         )""")
 
-    def submit(self, kv_data, **kwargs):
-        app_data = kv_data["DevEUI_uplink"]["__app_data"]
+    def insert_db(self, kv_data, **kwargs):
+        '''
+        a record inserted into a database is like below:
+        2018-07-05 10:03:23.306+09:00|000064FFFEA3819F|-63.0|10.5|0.65185546875|0.37939453125|29.0
+        '''
+        app_data = kv_data["__app_data"]
         if app_data is None:
-            return None
+            self.logger.error("the payload haven't been parsed.")
+            return False
         if app_data["data_type"] not in [0x10, 0x11]:
             return None
-        ts = kv_data["DevEUI_uplink"]["Time"]
-        dt = dateutil.parser.parse(ts)
-        dt = dt.astimezone(dateutil.tz.gettz("Asia/TZ"))
-        app_data["ts"] = dt.isoformat(sep=" ", timespec="milliseconds")
-        app_data["deveui"] = kv_data["DevEUI_uplink"]["DevEUI"]
-        app_data["rssi"] = kv_data["DevEUI_uplink"]["LrrRSSI"]
-        app_data["snr"] =  kv_data["DevEUI_uplink"]["LrrSNR"]
-        #
+        app_data["ts"] = self.fix_ts(kv_data["Time"])
+        app_data["deveui"] = kv_data["DevEUI"]
+        app_data["rssi"] = kv_data["LrrRSSI"]
+        app_data["snr"] =  kv_data["LrrSNR"]
         if self.debug_level > 0:
             self.logger.debug("app_data =", app_data)
         #
-        self.cur.execute("""\
-insert into app_data(ts, deveui, rssi, snr, accel, velocity, temp) \
-    values (:ts, :deveui, :rssi, :snr, :accel, :velocity, :temp)""",
-            app_data)
+        self.cur.execute("""
+                         insert into app_data (
+                            ts, deveui, rssi, snr, accel, velocity, temp)
+                         values (
+                            :ts, :deveui, :rssi, :snr,
+                            :accel, :velocity, :temp)
+                         """, app_data)
         self.con.commit()
-        #
         if self.debug_level > 0:
             self.logger.debug("submitting app_data into sqlite3 succeeded.")
         return True

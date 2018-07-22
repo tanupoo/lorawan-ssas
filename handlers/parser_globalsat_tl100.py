@@ -2,11 +2,9 @@
 
 from __future__ import print_function
 
-import sys
-from app_util import default_logger
-from parser_thru import parser as parser_thru
+from connector_mongodb import connector_mongodb
 
-class parser():
+class handler(connector_mongodb):
 
     @classmethod
     def parse(cls, hex_string):
@@ -22,7 +20,7 @@ class parser():
         '''
         if len(hex_string) != 22:
             print("ERROR: the payload length is not 22.")
-            return {}
+            return False
     
         x1 = bin(int(hex_string[2:4], 16))[2:].zfill(8)
         return {
@@ -33,15 +31,6 @@ class parser():
             "latitude": float(int(hex_string[6:14], 16)) * 0.000001,
             "longitude": float(int(hex_string[14:22], 16)) * 0.000001
             }
-
-    def __init__(self, **kwargs):
-        self.logger = kwargs.get("logger", default_logger)
-        self.debug_level = kwargs.get("debug_level", 0)
-
-    def submit(self, kv_data, **kwargs):
-        p = parser_thru(logger=self.logger, debug_level=self.debug_level)
-        p.submit(kv_data)
-        return True
 
 '''
 test code
