@@ -83,7 +83,6 @@ class handler(connector_sqlite3):
         #
         # count the shaded.
         app_data["shaded_count"] = app_data["shaded"].count("0")
-        print(app_data["shaded"], app_data["shaded_count"])
         #
         self.cur.execute("""
                          insert into hoku01_data (
