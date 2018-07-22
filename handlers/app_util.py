@@ -48,13 +48,13 @@ def iso8601_to_ms(s, tz="GMT"):
 
 def iso8601_to_fixed_ts(ts, tz):
     '''
-    the format of datetime string in Timestamp(ISO) of export.csv is
-    like below:
+    The format of datetime string in Timestamp(ISO) of export.csv that
+    the TP wireless logger generates is like below:
         "2018-07-10T07:02:53.917Z"
-    it needs to convert into a local time
-    as it is likely a JSON-like object from TP.
+    It needs to convert into a local time
+    as it is likely a JSON-like object sent by TP.
         "2018-07-10T16:02:53.917+09:00"
-    and, the superset recoginizes below format:
+    The superset recoginizes below format:
         "2018-07-10 16:02:53.917+09:00"
     '''
     dt = dateutil.parser.parse(ts)
