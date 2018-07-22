@@ -8,6 +8,8 @@
         "BEEF0D0000000001" : "HGA_HGOKIOTSN13",
         "000DB53114683543" : "GLOBALSAT_TL100",
         "000064FFFEFFFFF1" : "YOKOGAWA_XS770A",
+        "BEEF020000001103" : "HOKU01",
+        "BEEF020000001104" : "HOKU01", 
         "BEEF020000001103" : "THRU",
         "BEEF0D0000000001" : "THRU",
         "0000000000810521" : "THRU"
@@ -24,6 +26,10 @@
         "YOKOGAWA_XS770A": {
             "module": "parser_yokogawa_xs770a",
             "db_name": "/var/db/lorawan/xs770a.db"
+        },
+        "HOKU01": {
+            "module": "parser_hoku01",
+            "db_name": "hoge.db"
         },
         "THRU": {
             "module": "parser_thru",

@@ -3,9 +3,9 @@
 import requests
 import json
 from app_util import iso8601_to_ms
-from parser_template import parser_template
+from handler_template import handler_template
 
-class connector_mongodb(parser_template):
+class connector_mongodb(handler_template):
 
     '''
     you can use the following code to submit data into the default

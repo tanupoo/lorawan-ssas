@@ -36,7 +36,7 @@ class handler(connector_mongodb):
 test code
 '''
 if __name__ == '__main__' :
-    v = parser.parse("008263022034b60854231c");
+    v = handler.parse("008263022034b60854231c");
     #v = parse("000261022039c508541e9b");
     print("DEBUG: ")
     print("  device_type = %s" % v["device_type"])

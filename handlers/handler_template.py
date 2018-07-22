@@ -2,7 +2,7 @@
 
 from app_util import default_logger
 
-class parser_template():
+class handler_template():
 
     @classmethod
     def parse(cls, hex_string):

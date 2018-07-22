@@ -3,10 +3,10 @@
 import sys
 import sqlite3
 import re
-from parser_template import parser_template
+from handler_template import handler_template
 from app_util import iso8601_to_fixed_ts
 
-class connector_sqlite3(parser_template):
+class connector_sqlite3(handler_template):
 
     '''
     you can use the following code to submit data into the default

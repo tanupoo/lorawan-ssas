@@ -36,7 +36,7 @@ class handler(connector_sqlite3):
         shade_or_not = int(hex_string[1:16],16)
         s = []
         for i in range(60):
-            s.append("1" if shade_or_not&1 == 0 else "0")
+            s.append("0" if shade_or_not&1 == 0 else "1")
             shade_or_not >>= 1
         shaded = "".join(reversed(s))
         #
@@ -83,6 +83,7 @@ class handler(connector_sqlite3):
         #
         # count the shaded.
         app_data["shaded_count"] = app_data["shaded"].count("0")
+        print(app_data["shaded"], app_data["shaded_count"])
         #
         self.cur.execute("""
                          insert into hoku01_data (
@@ -100,7 +101,7 @@ class handler(connector_sqlite3):
 test code
 '''
 if __name__ == '__main__' :
-    v = parser.parse("0fffffffffffff3f21002300");
+    v = handler.parse("0fffffffffffff3f21002300");
     #v = parse("0fffffffffffff3fa1002300");
     print("DEBUG: ")
     print("  H = %s" % v["H"])

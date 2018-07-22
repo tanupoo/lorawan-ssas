@@ -61,7 +61,7 @@ if __name__ == '__main__' :
     else:
         s = sys.argv[1]
     print(s)
-    v = parser.parse("0000000058d4b41b420ea943430bbb24021d000000000000");
+    v = handler.parse("0000000058d4b41b420ea943430bbb24021d000000000000");
     print("DEBUG: ")
     print("  utc_time = %s" % v["utc_time"])
     print("  temperature = %s ?" % v["temperature"])

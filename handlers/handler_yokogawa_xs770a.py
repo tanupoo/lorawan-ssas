@@ -138,7 +138,7 @@ if __name__ == '__main__' :
     else:
         s = sys.argv[1]
     print(s)
-    v = parser.parse("1000003a1134d85028");
+    v = handler.parse("1000003a1134d85028");
     print("DEBUG:")
     for k,v in v.items():
         print("  {} = {}".format(k,v))
