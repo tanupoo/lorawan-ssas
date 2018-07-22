@@ -109,6 +109,7 @@ def proc_tp_uplink(kv_data):
     if succeeded, it is set into KEY_APP_DATA.
     '''
     handler = handler_map[app_type]
+    logger.debug("Handler {} is applied.".format(app_type))
     kv_payload = handler.parse(payload_hex)
     '''
     return value of parser.paser():
