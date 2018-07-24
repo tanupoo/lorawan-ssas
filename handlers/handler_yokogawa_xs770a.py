@@ -5,7 +5,7 @@ from __future__ import print_function
 import sys
 from binascii import a2b_hex
 from struct import unpack
-from connector_sqlite3 import connector_sqlite3
+from connector_postgres import connector_postgres
 
 # the specification are in the following document.
 # https://www.yokogawa.co.jp/solutions/solutions/iiot/maintenance/sushi-sensor-j/#%E3%83%89%E3%82%AD%E3%83%A5%E3%83%A1%E3%83%B3%E3%83%88%EF%BC%86%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89
@@ -66,7 +66,7 @@ data_tab = [
     { "data_type":0x43, "parser":parse_x43 },
     ]
 
-class handler(connector_sqlite3):
+class handler(connector_postgres):
 
     @classmethod
     def parse(cls, hex_string):
@@ -90,20 +90,16 @@ class handler(connector_sqlite3):
     def create_db(self, **kwargs):
         self.cur.execute("""
                          create table if not exists xs770a_data (
-                            ts datetime,
+                            ts timestamptz,
                             deveui text,
-                            rssi real,
-                            snr real,
-                            accel real,
-                            velocity real,
-                            temp real
+                            rssi float4,
+                            snr float4,
+                            accel float4,
+                            velocity float4,
+                            temp float4
                          )""")
 
     def insert_db(self, kv_data, **kwargs):
-        '''
-        a record inserted into a database is like below:
-        2018-07-05 10:03:23.306+09:00|000064FFFEA3819F|-63.0|10.5|0.65185546875|0.37939453125|29.0
-        '''
         app_data = kv_data["__app_data"]
         if app_data is None:
             self.logger.error("the payload haven't been parsed.")
@@ -121,12 +117,12 @@ class handler(connector_sqlite3):
                          insert into xs770a_data (
                             ts, deveui, rssi, snr, accel, velocity, temp)
                          values (
-                            :ts, :deveui, :rssi, :snr,
-                            :accel, :velocity, :temp)
+                            %(ts)s, %(deveui)s, %(rssi)s, %(snr)s,
+                            %(accel)s, %(velocity)s, %(temp)s )
                          """, app_data)
         self.con.commit()
         if self.debug_level > 0:
-            self.logger.debug("submitting app_data into sqlite3 succeeded.")
+            self.logger.debug("submitting app_data into postgres succeeded.")
         return True
 
 '''
