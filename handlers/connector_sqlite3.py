@@ -14,10 +14,10 @@ class connector_sqlite3(handler_template):
 
         from connector_sqlite3 import connector_sqlite3
 
-        class parser(connector_sqlite3):
+        class handler(connector_sqlite3):
             pass
 
-        p = parser(logger=self.logger, debug_level=self.debug_level,
+        p = handler(logger=self.logger, debug_level=self.debug_level,
                    db_name="your_database_name")
         p.submit(kv_data)
     '''
@@ -46,7 +46,7 @@ class connector_sqlite3(handler_template):
             (string): insert SQL
         '''
         if self.cur is None:
-            raise ValueError("{} is not connected.".format(self.db_name))
+            raise ValueError("sqlite3 is not connected.")
         return self.insert_db(kv_data, **kwargs)
 
     def fix_ts(self, ts):

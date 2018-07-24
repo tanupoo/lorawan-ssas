@@ -13,10 +13,10 @@ class connector_mongodb(handler_template):
 
         from connector_mongodb import connector_mongodb
 
-        class parser(connector_mongodb):
+        class handler(connector_mongodb):
             pass
 
-        p = parser(logger=self.logger, debug_level=self.debug_level,
+        p = handler(logger=self.logger, debug_level=self.debug_level,
                    db_uri="your_mongodb_rest_api")
         p.submit(kv_data)
 
