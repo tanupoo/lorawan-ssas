@@ -25,7 +25,7 @@
         },
         "YOKOGAWA_XS770A": {
             "module": "handler_yokogawa_xs770a",
-            "db_connect": "host=127.0.0.1 port=5432 dbname=sensors user=demo password=demo123"
+            "db_connect": "host=127.0.0.1 port=4321 dbname=sensors user=staff password=test123"
         },
         "HOKU01": {
             "module": "handler_hoku01",
