@@ -109,8 +109,8 @@ class handler(connector_postgres):
             return None
         app_data["ts"] = self.fix_ts(kv_data["Time"])
         app_data["deveui"] = kv_data["DevEUI"]
-        app_data["rssi"] = kv_data["LrrRSSI"]
-        app_data["snr"] =  kv_data["LrrSNR"]
+        app_data["rssi"] = float(kv_data["LrrRSSI"])
+        app_data["snr"] =  float(kv_data["LrrSNR"])
         if self.debug_level > 0:
             self.logger.debug("app_data = {}".format(app_data))
         #
