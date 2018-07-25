@@ -24,9 +24,20 @@ You have to install the gevent 1.2.2 instead.
 
 ### Depending on your configuration.
 
-- MongoDB, at least 2.4.9 or later.
-- requests to submit the application data into your MongoDB.
-- sqlite3
+For example, if you use MongoDB, you can install pymongo only.
+If you use whole database, you have to install everything.
+That's why it depends.
+
+- MongoDB
+
+If you use MongoDB, you should install pymongo, at least 2.4.9 or later.
+And, you have to install requests module for using the REST API of MongoDB.
+
+- PostgreSQL
+
+psycopg2-binary, you should install this version instead of psycopg2.
+
+- SQLite
 
 In the Linux distributions, sqlite3 may not be installed initially and
 your python may not sadly support sqlite3.
@@ -36,6 +47,7 @@ In this case, you have to install sqlite3-dev by your self
 ## Limitations
 
 - Supports the JSON type message sent by Actility NS (Network Server).
+- Providing data to show, you have to integrate other tools like superset.
 
 ## Application Message Handler
 
