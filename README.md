@@ -2,8 +2,8 @@ Super Simple LoRaWAN Application Server
 =======================================
 
 This is a super simple LoRaWAN AS (Application Server).
-It supports The JSON-like message from a network server via HTTP(S).
-And, it puts the application message into a database you specified.
+It acts as an HTTP(s) server to receive a JSON-like message from a network server.
+And, it stores the application message into a database you specified.
 
 ## Requirements
 
