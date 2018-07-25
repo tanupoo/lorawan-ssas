@@ -48,13 +48,13 @@ class connector_mongodb(handler_template):
             ret_value = ret.json()
             if ret_value["ok"] is True:
                 if self.debug_level > 0:
-                    self.logger.debug("Submitting data into MongoDB succeeded.")
+                    self.logger.debug("Succeeded submitting data into MongoDB.")
                     return True
             else:
                 self.logger.error("Response from MongoDB: {}".format(ret_value))
                 return False
         else:
-            self.logger.error("Submitting data into MongoDB failed. {} {} {}"
+            self.logger.error("Failed submitting data into MongoDB. {} {} {}"
                 .format(ret.status_code, ret.reason, ret.text))
             return False
 

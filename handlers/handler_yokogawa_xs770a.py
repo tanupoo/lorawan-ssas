@@ -122,7 +122,7 @@ class handler(connector_postgres):
                          """, app_data)
         self.con.commit()
         if self.debug_level > 0:
-            self.logger.debug("submitting app_data into postgres succeeded.")
+            self.logger.debug("Succeeded submitting data into postgresql.")
         return True
 
 '''

@@ -93,7 +93,7 @@ class handler(connector_sqlite3):
                          """, app_data)
         self.con.commit()
         if self.debug_level > 0:
-            self.logger.debug("submitting app_data into sqlite3 succeeded.")
+            self.logger.debug("Succeeded submitting data into sqlite3.")
         return True
 
 '''
