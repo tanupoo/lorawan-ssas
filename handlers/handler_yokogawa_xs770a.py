@@ -89,7 +89,7 @@ class handler(connector_postgres):
 
     def create_db(self, **kwargs):
         if self.tab_name is None:
-            self.tab_name "xs770a_data"
+            self.tab_name = "xs770a_data"
         #
         self.cur.execute("""
                          create table if not exists {} (
