@@ -23,12 +23,14 @@ class connector_postgres(handler_template):
     '''
     def db_init(self, **kwargs):
         '''
-        this method will call self.create_db() even if it is not needed.
+        db_connect is mandate.
+        tab_name is optional. A child class has to be defined.
         '''
         db_connect = kwargs.get("db_connect")
         if db_connect is None:
             raise ValueError("db_connect is required in the handler.")
         self.db_connect = db_connect
+        self.tab_name = kwargs.get("tab_name")
         self.cur = None
         if self.db_connect is not None:
             self.con = psycopg2.connect(self.db_connect)

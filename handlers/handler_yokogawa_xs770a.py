@@ -88,7 +88,9 @@ class handler(connector_postgres):
         return parse_data_type(a2b_hex(hex_string))
 
     def create_db(self, **kwargs):
-        self.db_name = get.kwargs("db_name", "xs770a_data")
+        if self.tab_name is None:
+            self.tab_name "xs770a_data"
+        #
         self.cur.execute("""
                          create table if not exists {} (
                             ts timestamptz,
@@ -98,7 +100,7 @@ class handler(connector_postgres):
                             accel float4,
                             velocity float4,
                             temp float4
-                         )""".format(self.db_name))
+                         )""".format(self.tab_name))
 
     def insert_db(self, kv_data, **kwargs):
         app_data = kv_data["__app_data"]
@@ -120,7 +122,7 @@ class handler(connector_postgres):
                          values (
                             %(ts)s, %(deveui)s, %(rssi)s, %(snr)s,
                             %(accel)s, %(velocity)s, %(temp)s )
-                         """.format(self.db_name), app_data)
+                         """.format(self.tab_name), app_data)
         self.con.commit()
         if self.debug_level > 0:
             self.logger.debug("Succeeded submitting data into postgresql.")
