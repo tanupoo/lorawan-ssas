@@ -2,14 +2,15 @@ Super Simple LoRaWAN Application Server
 =======================================
 
 This is a super simple LoRaWAN AS (Application Server).
-It acts as an HTTP(s) server to receive a JSON-like message from a network server.
-And, it stores the application message into a database you specified.
+It support the following features:
+- receives a POST message containing a JSON-like message from a network server.
+- parses the application message and stores data into a database you specified.
 
 ## Requirements
 
-- Python 3 is required.  Python 2.x is not tested well.
+- Python 3 is required.
 
-### Python modules
+Python modules:
 
 - dateutils
 - gevent
@@ -54,10 +55,11 @@ In this case, you have to install sqlite3-dev by your self
 The following message handlers are embedded.
 
 - Highgain Antenna HGOK IoT SN13
-- Globalsat LT-100
+- Globalsat LT-100, LW-360HR
 - Yokogawa XS770A
+- Greenhouse MSNLRA, Water Level Sensor, 401D
 
-You can add your handler.  Refer to the handler module.
+You can add your handler.  Please refer to other parsers.
 
 ## How to install
 
@@ -71,37 +73,31 @@ Then, you should change the directory.
 
 ## Configuration
 
-First, you have to define your application type of the DevEUI of your device
-in the app_type.
-And, you have to define the handler for the application type.
-At least, one record for each is required.
+You have to define your handler for each DevEUI.
 
-## config-simple.json
-
-When you look at the content of config-simple.json,
-You can see THRU in both app_type and handlers.
-
-BEEF0D0000000001 is a DevEUI.
-When the server receives the message in which the DevEUI is BEEF0D0000000001.
-The server knows that the application type of the message is THRU.
-Then, the server passes the payload_hex into parser_thru.
-parser_thru doesn't parse the payload_hex actually.
-It just submits the data from NS into the MongoDB.
-When you take a look into the parser_thru, you can understand what it does.
-
-### Details
-
-The key app_type defines the mapping table from a DevEUI to a handler name.
+The sensors close defines the mapping from a DevEUI to a handler.
 It must include at least one item.
-If you don't have your parser, you can use "THRU" for your device.
 
-The key handlers defines a set of parameters for the handler.
-It must include a key "module" and reserved.
-You can define other keys as you like and these keys are passed into the module.
+The handlers close defines a set of parameters for each handler
+including parser and database type.
 
 server_ip: specify the IP address of the HTTP server to be bound.
 server_port: specify the port number of the HTTP server to be bound.
 server_cert: (option) specify the filename including the server's certificate.
+
+## config-simple.json
+
+When you look at the content of config-simple.json,
+you can see BEEF0D0000000001 in the sensors close, which is a DevEUI.
+The close defines THRU as its handler.
+
+That means, when the server receives the message in which the DevEUI is BEEF0D0000000001, the server passes the payload_hex into the handler named THRU.
+
+When you look at the THRU in the handlers close, you see that no parser defines.
+It just submits the data from NS into the MongoDB.
+
+Now, when you take a look into 1000000000000002,
+you can understand what it does.
 
 ## How to run
 
