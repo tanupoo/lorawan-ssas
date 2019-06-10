@@ -1,12 +1,7 @@
-# -*- coding: utf-8 -*-
-
-import sys
+from db_connector_template import db_connector_template
 import sqlite3
-import re
-from handler_template import handler_template
-from app_util import iso8601_to_fixed_ts
 
-class connector_sqlite3(handler_template):
+class db_connector(db_connector_template):
 
     '''
     you can use the following code to submit data into the default
@@ -22,32 +17,37 @@ class connector_sqlite3(handler_template):
         p.submit(kv_data)
     '''
     def db_init(self, **kwargs):
-        '''
+        """
         this method will call self.create_db() even if it is not needed.
-        '''
-        db_name = kwargs.get("db_name")
-        if db_name is None:
+        """
+        self.db_name = kwargs.get("db_name")
+        if self.db_name is None:
             raise ValueError("db_name is required in the handler.")
-        self.db_name = db_name
-        self.cur = None
-        if self.db_name is not None:
-            self.con = sqlite3.connect(self.db_name)
-            self.cur = self.con.cursor()
+        self.con = sqlite3.connect(self.db_name)
+        self.cur = self.con.cursor()
         if self.cur is None:
             raise ValueError("cursor has not been opened.")
-        #
-        return self.create_db(**kwargs)
+        self.sql_create_table = kwargs.get("sql_create_table")
+        if self.sql_create_table is not None:
+            # XXX need to check whether the table has existed.
+            self.cur.execute(self.sql_create_table)
+        return True
 
     def db_submit(self, kv_data, **kwargs):
-        '''
+        """
         this method will call self.make_insert_string().
         the value of make_insert_string method:
             None: ignore this data.
             (string): insert SQL
-        '''
+        """
         if self.cur is None:
             raise ValueError("sqlite3 is not connected.")
-        return self.insert_db(kv_data, **kwargs)
+        app_data = self.get_app_data(kv_data, **kwargs)
+        if app_data is False:
+            return False
+        self.cur.execute(self.insert_tab_sql, app_data)
+        self.con.commit()
+        if self.debug_level > 0:
+            self.logger.debug("Succeeded submitting data into sqlite3.")
+        return True
 
-    def fix_ts(self, ts):
-        return iso8601_to_fixed_ts(ts, self.tz)

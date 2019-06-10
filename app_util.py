@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import print_function
-
 class default_logger():
 
     @classmethod
@@ -29,10 +25,10 @@ import dateutil.tz
 import dateutil.parser
 
 def iso8601_to_ms(s, tz="GMT"):
-    '''
+    """
     tz is a default timezone. If the string looks a naive dateime string,
     it is converted into the aware datetime object with the tz string.
-    '''
+    """
     default_tzinfo = dateutil.tz.gettz(tz)
     # convert the string into a datetime object.
     dt = dateutil.parser.parse(s)
@@ -46,8 +42,8 @@ def iso8601_to_ms(s, tz="GMT"):
     # seconds to milliseconds
     return int(1000*ts + dt.microsecond/1000)
 
-def iso8601_to_fixed_ts(ts, tz):
-    '''
+def iso8601_to_fixed_ts(ts, tz="GMT"):
+    """
     The format of datetime string in Timestamp(ISO) of export.csv that
     the TP wireless logger generates is like below:
         "2018-07-10T07:02:53.917Z"
@@ -56,7 +52,7 @@ def iso8601_to_fixed_ts(ts, tz):
         "2018-07-10T16:02:53.917+09:00"
     The superset recoginizes below format:
         "2018-07-10 16:02:53.917+09:00"
-    '''
+    """
     dt = dateutil.parser.parse(ts)
     dt = dt.astimezone(dateutil.tz.gettz(tz))
     return dt.isoformat(sep=" ", timespec="milliseconds")

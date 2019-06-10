@@ -1,11 +1,9 @@
-# -*- coding: utf-8 -*-
-
+from db_connector_template import db_connector_template
 import requests
 import json
 from app_util import iso8601_to_ms
-from handler_template import handler_template
 
-class connector_mongodb(handler_template):
+class db_connector(db_connector_template):
 
     '''
     you can use the following code to submit data into the default
@@ -22,13 +20,12 @@ class connector_mongodb(handler_template):
 
     '''
     def db_init(self, **kwargs):
-        '''
+        """
         db_uri must be passed.
-        '''
-        db_uri = kwargs.get("db_uri")
-        if db_uri is None:
+        """
+        self.db_uri = kwargs.get("db_uri")
+        if self.db_uri is None:
             raise ValueError("db_uri is required in the handler.")
-        self.db_uri = db_uri
         return True
 
     def db_submit(self, kv_data, **kwargs):
