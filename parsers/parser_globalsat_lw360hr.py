@@ -49,6 +49,7 @@ class parser(parser_template):
         return -1*(((~self.parse_number(data))&0xff)+1)
 
     def parse_skin_temp(self, data):
+        print("xxx", data.hex())
         """
         Skin Temperature
         e.g. 0x2c0b -> 28.6
@@ -82,7 +83,7 @@ class parser(parser_template):
             ( "reserved", None, 12, 13 ),
             ( "calorie", self.parse_number_le, 13, 15 ),
             ( "batt", self.parse_number, 15, 16 ),
-            ( "iso8601", self.parse_unixtime, 16, 20 ),
+            ( "dev_ts", self.parse_unixtime, 16, 20 ),
             ( "beacon_id", self.parse_nothing, 20, 40 ),
             ( "beacon_type", self.parse_beacon_type, 40, 41 ),
             ( "dev_rssi", self.parse_rssi, 41, 42 ),
@@ -103,10 +104,10 @@ if __name__ == "__main__":
     else:
         test_data = [
                 """
-                0c2702372e4e0852fe2002422b5b015f9a11ee5c00000000000000000000000000000000000000000000004b620cbf016f03
+                0c 2702 372e4e08 52fe2002 42 2b 5b01 5f 9a11ee5c 0000000000000000000000000000000000000000 00 00 00 4b 620c bf01 6f03
                 """,
                 """
-                0c2702ee314e08de0021020200c3015ab81dee5c00000000000000000000000000000000000000000000005b540b87085108
+                0c 2702 ee314e08 de002102 02 00 c301 5a b81dee5c 0000000000000000000000000000000000000000 00 00 00 5b 540b 8708 5108
                 """,
             ]
     #
