@@ -49,7 +49,6 @@ class parser(parser_template):
         return -1*(((~self.parse_number(data))&0xff)+1)
 
     def parse_skin_temp(self, data):
-        print("xxx", data.hex())
         """
         Skin Temperature
         e.g. 0x2c0b -> 28.6

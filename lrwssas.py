@@ -131,8 +131,6 @@ def proc_tp_uplink(kv_data):
         logger.error("Parsing payload for DevEUI {} failed.".format(deveui))
         return 400  # bad request.
     else:
-        print("xxx", dir(handler))
-        print("xxx", kv_payload)
         kv_data[KEY_APP_DATA] = kv_payload
         if handler.db_conn:
             logger.debug("db_submit() has been called.")
