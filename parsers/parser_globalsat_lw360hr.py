@@ -74,7 +74,7 @@ class parser(parser_template):
         #
         return self.parse_by_format(byte_data, [
             ( "ver", self.parse_number, 0, 1 ),
-            ( "cmd_id", self.parse_number, 1, 3 ),
+            ( "cmd_id", self.parse_number_le, 1, 3 ),
             ( "lon", self.parse_gis, 3, 7 ),
             ( "lat", self.parse_gis, 7, 11 ),
             ( "gps_fix", self.parse_gps_fix, 11, 12 ),
