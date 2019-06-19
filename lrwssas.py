@@ -36,6 +36,7 @@ CONF_SERVER_CERT = "server_cert"
 CONF_DEBUG_LEVEL = "debug_level"
 CONF_OPT_DEBUG = "opt_debug"
 CONF_LOG_STDOUT = "log_stdout"
+CONF_TZ = "tz"
 
 LOG_FMT = "%(asctime)s.%(msecs)d %(lineno)d %(message)s"
 LOG_DATE_FMT = "%Y-%m-%dT%H:%M:%S"
@@ -47,7 +48,7 @@ handler_map = {}
 @app.route("/up", method="POST")
 def app_up():
     log_common(request)
-    if config[CONF_DEBUG_LEVEL] > 0:
+    if config[CONF_DEBUG_LEVEL] > 1:
         payload = request.body.read()
         logger.debug("---BEGIN OF REQUESTED HEADER---")
         for k,v in request.headers.items():
@@ -185,6 +186,7 @@ def check_config(config):
     config.setdefault(CONF_SERVER_PORT, "18886")
     config.setdefault(CONF_SERVER_CERT, None)
     config.setdefault(CONF_DEBUG_LEVEL, 0)
+    config.setdefault(CONF_TZ, "Asia/Tokyo")
     # overwrite the debug level if opt.debug is True.
     if config[CONF_OPT_DEBUG] == True and config[CONF_DEBUG_LEVEL] == 0:
         config[CONF_DEBUG_LEVEL] = 99
@@ -230,6 +232,7 @@ def check_config(config):
                 return False
             db_handler = mod.db_connector(
                     logger=logger,
+                    tz=config[CONF_TZ],
                     debug_level=config[CONF_DEBUG_LEVEL],
                     **handler[CONF_DB][CONF_DB_ARGS])
         #
