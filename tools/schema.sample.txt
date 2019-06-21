@@ -1,0 +1,11 @@
+## sampe_table
+    ts     timestamptz
+    deveui text
+    rssi   float4
+    snr    float4
+    batt   int2
+
+## sample_table2
+    ts     timestamptz
+    temp   float4
+    humid  float4
