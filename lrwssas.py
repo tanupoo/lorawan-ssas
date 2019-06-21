@@ -188,7 +188,7 @@ def check_config(config):
     config.setdefault(CONF_DEBUG_LEVEL, 0)
     config.setdefault(CONF_TZ, "Asia/Tokyo")
     # overwrite the debug level if opt.debug is True.
-    if config[CONF_OPT_DEBUG] == True and config[CONF_DEBUG_LEVEL] == 0:
+    if config[CONF_OPT_DEBUG] == True:
         config[CONF_DEBUG_LEVEL] = 99
     #
     # NOTE: below check should be placed at the end of this method.
