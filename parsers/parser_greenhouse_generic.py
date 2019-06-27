@@ -8,11 +8,10 @@ class parser(parser_template):
     payload types supported.
         1: FMT, SEQ, BAT, PRSW, TIP, KND
         4: FMT, SEQ, BAT, TMP, HUM, LAT, LNG, ACX, ACY, ACZ, PRS
-    XXX to be assigned.
-       10: FMT, SEQ, BAT, ETMP, RHUM, LAT, LNG, GTMP, WTMP, WBGT, DMY
+      129: FMT, SEQ, BAT, ETMP, RHUM, LAT, LNG, GTMP, WTMP, WBGT, PRS
     """
 
-    def parse_bat(self, data):
+    def parse_batt(self, data):
         """
         BAT, 0% to 100% -> 0xfe to 0x01
         e.g. data = 0x8e -> bat = 56 %
@@ -79,7 +78,7 @@ class parser(parser_template):
         return self.parse_by_format(data, [
                 # function, start byte, end byte
                 ( "seq", self.parse_number, 1, 2 ),
-                ( "batt", self.parse_bat, 2, 3 ),
+                ( "batt", self.parse_batt, 2, 3 ),
                 ( "w_pressure", self.parse_prsw, 3, 7 ),
                 ( "tip", self.parse_tip, 7, 11 ),
                 ( "kind", self.parse_number, 11, 12 )
@@ -87,7 +86,7 @@ class parser(parser_template):
 
     def parse_payload_04(self, data):
         """
-        for MSNLRA.
+        for ???.
         04 0a 8e 0803 0119 32b325 635a08 ffca 0002 002c 2821
         FMT, SEQ, BAT, TMP, HUM, LAT, LNG, ACX, ACY, ACZ, PRS
         """
@@ -96,7 +95,7 @@ class parser(parser_template):
         return self.parse_by_format(data, [
                 # function, start byte, end byte
                 ( "seq", self.parse_number, 1, 2 ),
-                ( "batt", self.parse_bat, 2, 3 ),
+                ( "batt", self.parse_batt, 2, 3 ),
                 ( "temp", self.parse_temp, 3, 5 ),
                 ( "humid", self.parse_humid, 5, 7 ),
                 ( "lat", self.parse_lat, 7, 10 ),
@@ -107,17 +106,18 @@ class parser(parser_template):
                 ( "pressure", self.parse_prs, 19, 21 )
                 ])
 
-    def parse_payload_10(self, data):
+    def parse_payload_129(self, data):
         """
         for 401D.
-        0a 10 00 0803 0119 000000 000000 0805 0806 0807 0000
-        FMT, SEQ, BAT, ETMP, RHUM, LAT, LNG, GTMP, WTMP, WBGT, DMY
+        0a  10  00  0803 0119 000000 000000 0805 0806 0807 0000
+        FMT SEQ BAT ETMP RHUM LAT    LNG    GTMP WTMP WBGT DMY
         """
         if len(data) != 21:
             return False
         return self.parse_by_format(data, [
                 # function, start byte, end byte
                 ( "seq", self.parse_number, 1, 2 ),
+                ( "batt", self.parse_batt, 2, 3 ),
                 ( "temp", self.parse_temp, 3, 5 ),
                 ( "humid", self.parse_humid, 5, 7 ),
                 ( "gtmp", self.parse_temp, 13, 15 ),
@@ -131,7 +131,7 @@ class parser(parser_template):
         return a dict object.
         """
         format_tab = [
-                { "type": 0x0a, "parser": self.parse_payload_10 },
+                { "type": 0x81, "parser": self.parse_payload_129 },
                 { "type": 0x04, "parser": self.parse_payload_04 },
                 { "type": 0x01, "parser": self.parse_payload_01 },
                 ]
@@ -155,8 +155,9 @@ if __name__ == "__main__":
         test_data = [sys.argv[1]]
     else:
         test_data = [
-            "0a 0b 00 0803 0119 000000 000000 0804 0805 0806 0000",
-            "0A 0B 00 0803 0119 000000 000000 0804 0805 2400 00",
+            "81 0b 00 0803 0119 000000 000000 0804 0805 0806 0000",
+            "81 0B 00 0803 0119 000000 000000 0804 0805 2400 0000",
+            "81 0a 00 0803 0119 000000 000000 0803 0803 0803 0000",
             "04 0a 8e 0803 0119 32b325 635a08 ffca 0002 002c 2821",
             "01 10 8e 75e30341 00000003 01",
             "01 10 8e 75e30341 00000003", # error
