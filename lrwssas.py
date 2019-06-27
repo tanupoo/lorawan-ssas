@@ -1,9 +1,7 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2017 Shoichi Sakane <sakane@tanu.org>, All rights reserved.
 # See the file LICENSE in the top level directory for more details.
-#
 
 import sys
 import json
@@ -14,7 +12,6 @@ from gevent import monkey; monkey.patch_all()
 from importlib import import_module
 from argparse import ArgumentParser
 
-PROG_NAME = "lrwssas"
 KEY_TOPOBJ = "DevEUI_uplink"
 KEY_TIME = "Time"
 KEY_PAYLOAD_HEX = "payload_hex"
@@ -35,14 +32,12 @@ CONF_SERVER_PORT = "server_port"
 CONF_SERVER_CERT = "server_cert"
 CONF_DEBUG_LEVEL = "debug_level"
 CONF_OPT_DEBUG = "opt_debug"
-CONF_LOG_STDOUT = "log_stdout"
 CONF_TZ = "tz"
 
 LOG_FMT = "%(asctime)s.%(msecs)d %(lineno)d %(message)s"
 LOG_DATE_FMT = "%Y-%m-%dT%H:%M:%S"
 
 app = Bottle()
-logger = logging.getLogger(PROG_NAME)
 handler_map = {}
 
 @app.route("/up", method="POST")
@@ -142,29 +137,34 @@ def log_common(request):
     logger.info("Access from {} {} {}".format(request.remote_addr,
                                               request.method, request.url))
 
-def set_logger(config):
+def set_logger(prog_name="", log_file=None, logging_stdout=False,
+               debug_mode=False):
+    def get_logging_handler(channel, debug_mode):
+        channel.setFormatter(logging.Formatter(fmt=LOG_FMT,
+                                               datefmt=LOG_DATE_FMT))
+        if debug_mode:
+            channel.setLevel(logging.DEBUG)
+        else:
+            channel.setLevel(logging.INFO)
+        return channel
     #
     # set logger.
-    #   "syslog", not yet
-    #   "stdout"
-    #   filename
-    #
-    log_file = config.get("log_file", "stdout")
-    #
-    if config[CONF_LOG_STDOUT] or log_file == "stdout":
-        ch = logging.StreamHandler()
-    else:
-        ch = logging.FileHandler(log_file)
-    #
-    ch.setFormatter(logging.Formatter(fmt=LOG_FMT, datefmt=LOG_DATE_FMT))
-    ch.setLevel(logging.DEBUG)
-    logger.addHandler(ch)
-    if config[CONF_DEBUG_LEVEL] > 0:
+    #   log_file: a file name for logging.
+    logging.basicConfig()
+    logger = logging.getLogger(prog_name)
+    if logging_stdout is True:
+        logger.addHandler(get_logging_handler(logging.StreamHandler(),
+                                              debug_mode))
+    if log_file is not None:
+        logger.addHandler(get_logging_handler(logging.FileHandler(log_file),
+                                              debug_mode))
+    if debug_mode:
         logger.setLevel(logging.DEBUG)
     else:
         logger.setLevel(logging.INFO)
+    return logger
 
-def check_config(config):
+def check_config(config, debug_mode=False):
     # set PYTHONPATH
     sys.path.extend(["./parsers", "./db_connectors"])
     for i in config.get(CONF_MODULE_PATH, []):
@@ -185,10 +185,9 @@ def check_config(config):
     config.setdefault(CONF_SERVER_ADDR, "::")
     config.setdefault(CONF_SERVER_PORT, "18886")
     config.setdefault(CONF_SERVER_CERT, None)
-    config.setdefault(CONF_DEBUG_LEVEL, 0)
     config.setdefault(CONF_TZ, "Asia/Tokyo")
     # overwrite the debug level if opt.debug is True.
-    if config[CONF_OPT_DEBUG] == True:
+    if debug_mode == True:
         config[CONF_DEBUG_LEVEL] = 99
     #
     # NOTE: below check should be placed at the end of this method.
@@ -249,30 +248,32 @@ ap.add_argument("config_file", metavar="CONFIG_FILE",
                 help="specify the config file.")
 ap.add_argument("-d", action="store_true", dest="debug",
                help="enable debug mode.")
-ap.add_argument("-D", action="store_true", dest="log_stdout",
+ap.add_argument("-D", action="store_true", dest="logging_stdout",
                help="enable to show messages onto stdout.")
 opt = ap.parse_args()
-# get config.
+# load the config file.
 try:
     config = json.load(open(opt.config_file))
 except Exception as e:
     print("ERROR: {} read error. {}".format(opt.config_file, e))
     exit(1)
 # update config.
-config[CONF_OPT_DEBUG] = opt.debug
-config[CONF_LOG_STDOUT] = opt.log_stdout
+config.setdefault(CONF_DEBUG_LEVEL, 0)  # only CONF_DEBUG_LEVEL needs here.
+logger = set_logger(prog_name="SSAS", log_file=config.get("log_file"),
+                    logging_stdout=opt.logging_stdout,
+                    debug_mode=opt.debug)
 if not check_config(config):
     print("ERROR: error in {}.".format(opt.config_file))
     exit(1)
-#
-set_logger(config)
 #
 server_addr = config.get("server_addr")
 server_port = int(config.get("server_port"))
 server_cert = config.get("server_cert")
 server_scheme = "https" if server_cert else "http"
-logger.info("Starting {} listening on {}://{}:{}/"
-            .format(PROG_NAME, server_scheme, server_addr, server_port))
+logger.info("Starting the SSAS listening on {}://{}:{}/"
+            .format(server_scheme,
+                    server_addr if server_addr else "0.0.0.0",
+                    server_port))
 #
 if server_cert:
     app.run(host=server_addr, port=server_port,
