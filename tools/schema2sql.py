@@ -3,17 +3,18 @@ import re
 
 """
 ## sampe_table
-    ts     timestamptz
-    deveui text
-    rssi   float4
-    snr    float4
-    batt   int2
 
 The above definition will go into the below:
 
 "sql_create_table": "create table if not exists sample_table ( ts timestamptz, deveui text, rssi float4, snr float4, batt int2)",
 "sql_insert_table": "insert into sample_table ( ts, deveui, rssi, snr, batt) values ( %(ts)s, %(deveui)s, %(rssi)s, %(snr)s)"
 
+below four columns are always created.
+
+	ts timestamptz
+	deveui text
+	rssi float4
+	snr float4
 """
 
 re_title = re.compile("^##\s*(?P<title>[\w\d]+)\s*")
@@ -28,6 +29,10 @@ class Schema():
     def add_col(self, name, col_type):
         self.cols.append((name, col_type))
     def flush(self):
+        self.add_col("ts", "timestamptz")
+        self.add_col("deveui", "text")
+        self.add_col("rssi", "float4")
+        self.add_col("snr", "float4")
         if self.table_name is None:
             raise ValueError("ERROR: table name is not defined.")
         statement = f"## {self.table_name}\n\n"
