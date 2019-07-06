@@ -4,6 +4,7 @@
 # See the file LICENSE in the top level directory for more details.
 
 import sys
+import os   # getenv() for extending PYTHONPATH.
 import json
 import logging
 from functools import wraps
@@ -165,10 +166,15 @@ def set_logger(prog_name="", log_file=None, logging_stdout=False,
     return logger
 
 def check_config(config, debug_mode=False):
+    # extend PYTHONPATH
+    python_paths = os.getenv("PYTHONPATH")
+    if python_paths:
+        for p in python_paths.split(":"):
+            sys.path.append("{}/parsers".format(p))
+            sys.path.append("{}/db_connectors".format(p))
     # set PYTHONPATH
-    sys.path.extend(["./parsers", "./db_connectors"])
-    for i in config.get(CONF_MODULE_PATH, []):
-        sys.path.append(i)
+    #for i in config.get(CONF_MODULE_PATH, []):
+    #    sys.path.append(i)
     # check if the sensors key exists.
     sensors = config.get(CONF_SENSORS)
     if not sensors:
