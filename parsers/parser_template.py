@@ -30,11 +30,35 @@ class parser_template():
         """
         return int.from_bytes(data,"big")
 
+    def parse_number_d1(self, data):
+        """
+        convert bytes in big endien into a unsigned number with unit of 0.1.
+        """
+        return round(int.from_bytes(data,"big")/10,1)
+
+    def parse_number_d2(self, data):
+        """
+        convert bytes in big endien into a unsigned number with unit of 0.01.
+        """
+        return round(int.from_bytes(data,"big")/100,2)
+
     def parse_signed_number(self, data):
         """
         convert bytes in big endien into a signed number.
         """
         return int.from_bytes(data,"big",signed=True)
+
+    def parse_signed_number_d1(self, data):
+        """
+        convert bytes in big endien into a signed number with unit of 0.1.
+        """
+        return round(int.from_bytes(data,"big",signed=True)/10,1)
+
+    def parse_signed_number_d2(self, data):
+        """
+        convert bytes in big endien into a signed number with unit of 0.01.
+        """
+        return round(int.from_bytes(data,"big",signed=True)/100,2)
 
     def parse_number_le(self, data):
         """
@@ -74,6 +98,30 @@ class parser_template():
         if hex_string == "None":
             return None
         return self.parse_bytes(a2b_hex(hex_string))
+
+    def test_eval(self, test_data):
+        """
+        test_data: a list of test data in hex string.
+            e.g. [ { "data":"01020304", "result": { "temp:...} }, ... ]
+        """
+        for s in test_data:
+            if not ("data" in s and "result" in s):
+                print("ERROR: invalid data, both data and result must exist.")
+            s["data"] = "".join(s["data"].split())
+            print("TEST:", s["data"])
+            r = self.parse_hex(s["data"]);
+            if r is not False:
+                for k,v in s["result"].items():
+                    if k not in r:
+                        print("ERROR: {} must exist in data".format(k))
+                        continue
+                    print("  {} = {}".format(k,r[k]))
+                    if v != r[k]:
+                        print("ERROR: invalid value, expected {} but {}"
+                              .format(v,r[k]))
+                        continue
+            else:
+                print("  ERROR")
 
     def test(self, test_data):
         """
