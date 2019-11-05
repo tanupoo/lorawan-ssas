@@ -54,11 +54,12 @@ In this case, you have to install sqlite3-dev by your self
 
 The following message handlers are embedded.
 
-- Highgain Antenna HGOK IoT SN13
-- Globalsat LT-100, LW-360HR
-- Yokogawa XS770A
-- Greenhouse MSNLRA, Water Level Sensor, 401D
-- Netvox, R711, R718A, R718AB, R710A, and some PH sensors.
+- [Highgain Antenna](http://www.highgain.co.kr/): HGOK IoT SN13
+- [Globalsat](https://www.globalsat.com.tw/en/): LT-100, LW-360HR
+- [Yokogawa](https://www.yokogawa.com/): XS770A
+- [Greenhouse](https://www.green-house.co.jp/): MSNLRA, Water Level Sensor, 401D
+- [NALTEC](http://www.naltec.co.jp/english/): NLS-LW
+- [Netvox](http://www.netvox.com.tw/index.html): R711, R718A, R718AB, R710A, and some PH sensors.
 
 You can add your handler.  Please refer to other parsers.
 
