@@ -113,11 +113,10 @@ lorawan@ubuntu:~/ssas$ ls $HOME/ssas/server.crt
 git clone http://github.com/tanupoo/lorawan-ssas.git
 ```
 
-- Change into the directory.
+- Edit configuration file.
 
 ```
-cd lorawan-ssas
-cp config-simple.json config.json
+cp lorawan-ssas/config-simple.json config.json
 ```
 
 Edit config.json like below.
@@ -128,7 +127,7 @@ Edit config.json like below.
     "log_file": "lrwssas.log",
     "server_addr": "",
     "server_port": "18886",
-    "server_cert": "",
+    "server_cert": "server.crt",
     "sensors": {
         "3499000DB5E3818C" : { "handler": "Netvox_R711" },
         "000064FFFEA3819F" : { "handler": "YOKOGAWA_XS770A" }
@@ -166,3 +165,21 @@ Edit config.json like below.
     }
 }
 ```
+
+## Run lrwssas.py
+
+For the first time, you should use both the -d and -D options
+so that you can see how the server works.
+
+```
+PYTHONPATH=lorawan-ssas lorawan-ssas/lrwssas.py -d -D config.json
+```
+
+Here is the full log.
+
+```
+lorawan@kamishihoro-ssas:~/ssas$ PYTHONPATH=lorawan-ssas lorawan-ssas/lrwssas.py -d -D config.json
+2019-11-26T12:59:06.880 282 Starting the SSAS listening on https://0.0.0.0:18886/
+INFO:SSAS:Starting the SSAS listening on https://0.0.0.0:18886/
+```
+
