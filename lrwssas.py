@@ -45,18 +45,27 @@ handler_map = {}
 def app_up():
     log_common(request)
     if config[CONF_DEBUG_LEVEL] > 1:
-        payload = request.body.read()
         logger.debug("---BEGIN OF REQUESTED HEADER---")
         for k,v in request.headers.items():
             logger.debug("{}: {}".format(k,v))
         logger.debug("---END OF REQUESTED HEADER---")
+    # convert the payload into JSON.
+    payload = request.body.read()
+    if config[CONF_DEBUG_LEVEL] > 1:
         logger.debug("---BEGIN OF REQUESTED DATA---")
         logger.debug(payload)
         logger.debug("---END OF REQUESTED DATA---")
         request.body.seek(0)
-    # convert the payload into JSON.
     try:
-        kv_data = json.load(request.body)
+        if isinstance(payload, bytes):
+            kv_data = json.loads(payload.decode("utf-8"))
+        elif isinstance(payload, str):
+            kv_data = json.loads(payload)
+        else:
+            emsg = ("The payload type is neigther bytes nor str. {}"
+                .format(type(payload)))
+            logger.error("{}".format(emsg))
+            abort(404, emsg)
     except json.decoder.JSONDecodeError as e:
         emsg = "The payload format was not likely JSON."
         logger.error("{}: {}".format(emsg, e))
