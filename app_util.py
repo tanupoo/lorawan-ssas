@@ -55,5 +55,7 @@ def iso8601_to_fixed_ts(ts, tz="GMT"):
     """
     dt = dateutil.parser.parse(ts)
     dt = dt.astimezone(dateutil.tz.gettz(tz))
-    return dt.isoformat(sep=" ", timespec="milliseconds")
+    # for python 3.5
+    #return dt.isoformat(sep=" ", timespec="milliseconds")
+    return dt.isoformat()
 
