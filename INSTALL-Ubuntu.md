@@ -25,13 +25,13 @@ sudo update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 10
 - Install below several python modules.
 
 ```
-pip install bottle
-pip install gevent
-pip install requests
-pip install dateutils
-pip install psycopg2
-pip install aiopg
-pip install aiohttp
+sudo -H pip install bottle
+sudo -H pip install gevent
+sudo -H pip install requests
+sudo -H pip install dateutils
+sudo -H pip install psycopg2
+sudo -H pip install aiopg
+sudo -H pip install aiohttp
 ```
 
 ## setup PostgreSQL
