@@ -103,6 +103,9 @@ you can understand what it does.
 
 ## How to run
 
+Here is the general installation guide with MongoDB.
+See also [install into Ubuntu 16.04 with PostgreSQL](INSTALL-Ubuntu.md).
+
 ### MongoDB
 
 If you don't use MongoDB, you don't need this section.
