@@ -1,0 +1,42 @@
+{  
+    "DevEUI_uplink" : {
+        "DevEUI" : "3499000DB5E3818C",
+        "DevAddr" : "BEEF0001",
+        "Time" : "2017-03-24T06:53:32.502+01:00",
+        "payload_hex" : "010B012409EA1A90000000",
+        "Lrcid" : "00000201",
+        "Lrrid" : "69606FD0",
+        "LrrLAT" : "35.665005",
+        "LrrRSSI" : "0.000000",
+        "LrrSNR" : "-20.000000",
+        "LrrLON" : "139.731293",
+        "DevLrrCnt" : "1",
+        "Lrrs" : {
+            "Lrr" : {
+            "LrrESP" : "-20.043213",
+            "LrrSNR" : "-20.000000",
+            "Lrrid" : "69606FD0",
+            "Chain" : "0",
+            "LrrRSSI" : "0.000000"
+            }
+        },
+        "CustomerID" : "100000778",
+        "CustomerData" : {
+            "alr" : {
+            "pro" : "ADRF/DEMO",
+            "ver" : "1"
+            }
+        },
+        "FCntUp" : "7970",
+        "Channel" : "LC5",
+        "SubBand" : "G0",
+        "ModelCfg" : "0",
+        "Late" : "0",
+        "ADRbit" : "1",
+        "FCntDn" : "2",
+        "SpFact" : "12",
+        "MType" : "4",
+        "FPort" : "2",
+        "mic_hex" : "6fa15f9f"
+    }
+}
