@@ -160,7 +160,10 @@ if you want to see debug messages, consider to use the -d options like below.
 If you define server_cert, the server requires HTTPS connection.
 Therefore, you have to specify https:// instead of http://.
 If you specify a self-signed certificate for your server,
-You may add the -k option.
+You may add the -k option.  See below for this reference.
+
+    % curl -k -v -H 'Content-Type: application/json' \
+          -d '@test-data.json' https://localhost:18886/up
 
 ## security considerations
 
@@ -219,45 +222,47 @@ please wait a while until you will receive something.
 
 Here is an example message that lrwssas assumes to be sent from NS.
 
-    {
-       "DevEUI_uplink" : {
-          "DevEUI" : "BEEF0D0000000001",
-          "DevAddr" : "BEEF0001"
-          "Time" : "2017-03-24T06:53:32.502+01:00",
-          "payload_hex" : "0000000058d4b41b420ea943430bbb24021d000000000000",
-          "Lrcid" : "00000201",
-          "Lrrid" : "69606FD0",
-          "LrrLAT" : "35.665005",
-          "LrrRSSI" : "0.000000",
-          "LrrSNR" : "-20.000000",
-          "LrrLON" : "139.731293",
-          "DevLrrCnt" : "1",
-          "Lrrs" : {
-             "Lrr" : {
-                "LrrESP" : "-20.043213",
-                "LrrSNR" : "-20.000000",
-                "Lrrid" : "69606FD0",
-                "Chain" : "0",
-                "LrrRSSI" : "0.000000"
-             }
-          },
-          "CustomerID" : "100000778",
-          "CustomerData" : {
-             "alr" : {
-                "pro" : "ADRF/DEMO",
-                "ver" : "1"
-             }
-          },
-          "FCntUp" : "7970",
-          "Channel" : "LC5",
-          "SubBand" : "G0",
-          "ModelCfg" : "0",
-          "Late" : "0",
-          "ADRbit" : "1",
-          "FCntDn" : "2",
-          "SpFact" : "12",
-          "MType" : "4",
-          "FPort" : "2",
-          "mic_hex" : "6fa15f9f",
-       }
+```
+{
+    "DevEUI_uplink" : {
+        "DevEUI" : "BEEF0D0000000001",
+        "DevAddr" : "BEEF0001",
+        "Time" : "2017-03-24T06:53:32.502+01:00",
+        "payload_hex" : "0000000058d4b41b420ea943430bbb24021d000000000000",
+        "Lrcid" : "00000201",
+        "Lrrid" : "69606FD0",
+        "LrrLAT" : "35.665005",
+        "LrrRSSI" : "0.000000",
+        "LrrSNR" : "-20.000000",
+        "LrrLON" : "139.731293",
+        "DevLrrCnt" : "1",
+        "Lrrs" : {
+            "Lrr" : {
+            "LrrESP" : "-20.043213",
+            "LrrSNR" : "-20.000000",
+            "Lrrid" : "69606FD0",
+            "Chain" : "0",
+            "LrrRSSI" : "0.000000"
+            }
+        },
+        "CustomerID" : "100000778",
+        "CustomerData" : {
+            "alr" : {
+            "pro" : "ADRF/DEMO",
+            "ver" : "1"
+            }
+        },
+        "FCntUp" : "7970",
+        "Channel" : "LC5",
+        "SubBand" : "G0",
+        "ModelCfg" : "0",
+        "Late" : "0",
+        "ADRbit" : "1",
+        "FCntDn" : "2",
+        "SpFact" : "12",
+        "MType" : "4",
+        "FPort" : "2",
+        "mic_hex" : "6fa15f9f"
     }
+}
+```

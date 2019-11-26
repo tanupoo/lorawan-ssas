@@ -95,7 +95,7 @@ cd $HOME/ssas
 
 ```
 openssl req -x509 -sha256 -days 7300 \
-    -newkey rsa:2048 -nodes -keyout server.crt \
+    -newkey rsa:2048 -nodes -keyout $HOME/ssas/server.crt \
     -subj '/C=JP/ST=Tokyo/L=Akasaka/O=Cisco/CN=LoRaWAN-AS' \
     -out $HOME/ssas/server.crt
 ```
