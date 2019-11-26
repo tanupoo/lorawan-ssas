@@ -22,6 +22,24 @@ class parser(parser_template):
         """
         return self.parse_signed_number(data)
 
+    def parse_current_20mA(self, data):
+        """
+        0x0000 - 0xffff -> 0mA - 20mA
+        """
+        return self.parse_number_le(data) / 0xffff * 20
+
+    def parse_voltage_10V(self, data):
+        """
+        0x0000 - 0xffff -> 0V - 10V
+        """
+        return self.parse_number_le(data) / 0xffff * 10
+
+    def parse_thermocouple(self, data):
+        """
+        -200 - 1820 C -> 0.0625
+        """
+        return self.parse_number_le(data)
+
     def parse_payload_7f(self, byte_data):
         """
         Hdr, Vit, Temp
@@ -35,6 +53,40 @@ class parser(parser_template):
                 ( "temp", self.parse_temp, 2, 3 ),
                 ])
 
+    def parse_payload_23(self, byte_data):
+        """
+        Hdr, Vit, Temp, C-IN1, C-IN2, Vo-IN1, Vo-IN2
+        """
+        if len(byte_data) != 11:
+            return False
+        return self.parse_by_format(byte_data, [
+                # function, start byte, end byte
+                ( "hdr", self.parse_number, 0, 1 ),
+                ( "vit", self.parse_vit, 1, 2 ),
+                ( "temp", self.parse_temp, 2, 3 ),
+                ( "current_input_1", self.parse_current_20mA, 3, 5 ),
+                ( "current_input_2", self.parse_current_20mA, 5, 7 ),
+                ( "voltage_input_1", self.parse_voltage_10V, 7, 9 ),
+                ( "voltage_input_2", self.parse_voltage_10V, 9, 11 ),
+                ])
+
+    def parse_payload_24(self, byte_data):
+        """
+        Hdr, Vit, Temp, TC1, TC2, TC3, TC4
+        """
+        if len(byte_data) != 11:
+            return False
+        return self.parse_by_format(byte_data, [
+                # function, start byte, end byte
+                ( "hdr", self.parse_number, 0, 1 ),
+                ( "vit", self.parse_vit, 1, 2 ),
+                ( "temp", self.parse_temp, 2, 3 ),
+                ( "thermocouple_1", self.parse_thermocouple, 3, 5 ),
+                ( "thermocouple_2", self.parse_thermocouple, 5, 7 ),
+                ( "thermocouple_3", self.parse_thermocouple, 7, 9 ),
+                ( "thermocouple_4", self.parse_thermocouple, 9, 11 ),
+                ])
+
     def parse_payload_00(self, byte_data):
         raise NotImplementedError
 
@@ -46,6 +98,8 @@ class parser(parser_template):
         format_tab = [
                 { "hdr": 0x7f, "parser": self.parse_payload_7f },
                 { "hdr": 0x00, "parser": self.parse_payload_00 },
+                { "hdr": 0x23, "parser": self.parse_payload_23 },
+                { "hdr": 0x24, "parser": self.parse_payload_24 },
                 ]
         for t in format_tab:
             if byte_data[0] == t["hdr"]:
