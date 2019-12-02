@@ -99,6 +99,25 @@ class parser_template():
             return None
         return self.parse_bytes(a2b_hex(hex_string))
 
+    def parse_binary16_to_float(self, data):
+        # referred to https://gist.github.com/zed/59a413ae2ed4141d2037
+        assert 2 == len(data) and isinstance(data, bytes)
+        n = int.from_bytes(data,"big")
+        sign = n >> 15
+        exp = (n >> 10) & 0b011111
+        fraction = n & (2**10 - 1)
+        if exp == 0:
+            if fraction == 0:
+                return -0.0 if sign else 0.0
+            else:
+                return (-1)**sign * fraction / 2**10 * 2**(-14)  # subnormal
+        elif exp == 0b11111:
+            if fraction == 0:
+                return float('-inf') if sign else float('inf')
+            else:
+                return float('nan')
+        return (-1)**sign * (1 + fraction / 2**10) * 2**(exp - 15)
+
     def test_eval(self, test_data):
         """
         test_data: a list of test data in hex string.

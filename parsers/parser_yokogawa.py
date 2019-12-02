@@ -18,9 +18,9 @@ class parser(parser_template):
         '''
         return {
             "status": data[1:3],
-            "accel": unpack(">e",data[3:5])[0],
-            "velocity": unpack(">e",data[5:7])[0],
-            "temp": unpack(">e",data[7:9])[0] }
+            "accel": self.parse_binary16_to_float(data[3:5]),
+            "velocity": self.parse_binary16_to_float(data[5:7]),
+            "temp": self.parse_binary16_to_float(data[7:9]) }
 
     def parse_x12(self, data):
         '''
@@ -29,8 +29,8 @@ class parser(parser_template):
         '''
         return {
             "status": data[1:3],
-            "accel": unpack(">e",data[3:5])[0],
-            "velocity": unpack(">e",data[5:7])[0] }
+            "accel": self.parse_binary16_to_float(data[3:5]),
+            "velocity": self.parse_binary16_to_float(data[5:7]) }
 
     def parse_x40(self, data):
         return {
@@ -90,6 +90,7 @@ if __name__ == "__main__":
     else:
         test_data = [
             "1000003a1134d85028",
+            "10000039e1354a4f10",
             ]
     #
     p = parser()
