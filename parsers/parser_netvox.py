@@ -20,12 +20,14 @@ class parser(parser_template):
 
     def parse_R711(self, data):
         """
-        Device: R711, R718A, R718AB, R710A
-        DeviceType: 0x01, 0x0B, 0x13, 0x6E
-        ReportType: 0x01
-        Payload:
-            batt temp humid reserved
-              1   2     2      3
+        Device: R711, R712, R718A, R718AB, R710A
+        nb_bytes Field
+           1     DeviceType: 0x01, 0x0B, 0x13, 0x6E
+           1     ReportType: 0x01
+           1     Battery, 0.1V
+           2     Temperature, Signed, 0.01 C
+           2     Humidity, 0.01 %
+           3     Reserved
         """
         return self.parse_by_format(data, [
                 # function, start byte, end byte
@@ -36,35 +38,88 @@ class parser(parser_template):
 
     def parse_R726(self, data):
         """
-        DeviceType: 0x05, 0x09, 0x0D, 0x52, 0x53, 0x54, 0x57, 0x58,
-                    0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68
         Device: RA07Series, R726Series, R727Series, RA07ASeries, R726ASeries,
                 R727ASeries, R718PASeries, R718PBSeries, R718R, R718U,
                 R718SSeries, R728R, R728U, R728S, R729R, R729U, R729S
-        ReportType: 0x01 - 0x09
-        Payload:
-            0x01: batt pm1 pm25 pm10 reserved
-                   1    2   2    2      1
+        nb_bytes Field
+           1     DeviceType: 0x05, 0x09, 0x0D, 0x52, 0x53, 0x54, 0x57, 0x58,
+                             0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67,
+                             0x68
+           1     ReportType: 0x01 - 0x09
+                 ---- 0x01 ----
+           1     Battery 0.1V
+           2     PM1.0 1ug/m3
+           2     PM2.5 1ug/m3
+           2     PM10  1ug/m3
+           1     Reserved
+                 ---- 0x08 ----
+           1     Battery 0.1V
+           2     PH 1mV, 0.01pH
+           2     TemperaturewithPH, Signed, 0.01
+           3     Reserved
             0x08: batt ph  temp orp reserved
                    1    2   2    2      1
         """
-        if data[2] == 0x08:
+        if data[2] == 0x01:
+            return self.parse_by_format(data, [
+                    # function, start byte, end byte
+                    ( "batt", self.parse_batt, 3, 4 ),
+                    ( "pm_1_0", self.parse_number, 4, 6 ),
+                    ( "pm_2_5", self.parse_number, 6, 8 ),
+                    ( "pm_10", self.parse_number, 8, 10 ),
+                    ])
+        elif data[2] == 0x02:
+            return self.parse_by_format(data, [
+                    # function, start byte, end byte
+                    ( "batt", self.parse_batt, 3, 4 ),
+                    ( "pm_1_0", self.parse_number, 4, 6 ),
+                    ( "pm_2_5", self.parse_number, 6, 8 ),
+                    ( "pm_10", self.parse_number, 8, 10 ),
+                    ])
+        elif data[2] == 0x08:
             return self.parse_by_format(data, [
                     # function, start byte, end byte
                     ( "batt", self.parse_batt, 3, 4 ),
                     ( "ph", self.parse_number_d2, 4, 6 ),
-                    ( "temp", self.parse_signed_number_d2, 6, 8 ),
-                    ( "orp", self.parse_signed_number, 8, 10 ),
+                    ( "temp_with_ph", self.parse_signed_number_d2, 6, 8 ),
                     ])
         else:
             print("ERROR: unsupported DataType {} for DeviceType {} of netvox"
                   .format(data[2],data[1]))
             return False
-            
+
+    def parse_R718IA2(self, data):
+        """
+        Device: R718IA2, R718IB2, R730IA2, R730IB2
+        nb_bytes Field
+           1     DeviceType: 0x41, 0x42, 0x76, 0x77
+           1     ReportType: 0x01
+           1     Battery, 0.1V
+           2     ADCRawValue1, 1mV
+           2     ADCRawValue2, 1mV
+           3     Reserved
+        """
+        if data[2] == 0x01:
+            return self.parse_by_format(data, [
+                    # function, start byte, end byte
+                    ( "batt", self.parse_batt, 3, 4 ),
+                    ( "adc_raw_value_1", self.parse_number, 4, 6 ),
+                    ( "adc_raw_value_2", self.parse_number, 6, 8 ),
+                    ])
+        else:
+            print("ERROR: unsupported DataType {} for DeviceType {} of netvox"
+                  .format(data[2],data[1]))
+            return False
 
     def parse_xgen(self, data):
-        # Version DeviceType ReportType NetvoxPayLoadData
-        #    1        1          1             8
+        """
+        For general purpose.
+        nb_bytes Field
+           1     Version
+           1     DeviceType
+           1     ReportType
+           8     NetvoxPayLoadData
+        """
         return self.parse_by_format(data, [
                 ( "Version", self.parse_number, 0, 1 ),
                 ( "DeviceType", self.parse_number, 1, 2 ),
@@ -78,7 +133,7 @@ class parser(parser_template):
         return a dict object.
         """
         format_tab = [
-                { "type": 0x01, "parser": self.parse_R711 }, # R711
+                { "type": 0x01, "parser": self.parse_R711 }, # R711, R712
                 { "type": 0x02, "parser": self.parse_xgen }, # R311A
                 { "type": 0x03, "parser": self.parse_xgen }, # RB11E
                 { "type": 0x04, "parser": self.parse_xgen }, # R311G
@@ -142,8 +197,8 @@ class parser(parser_template):
                 { "type": 0x3E, "parser": self.parse_xgen }, # R718F2
                 { "type": 0x3F, "parser": self.parse_xgen }, # R718H2
                 { "type": 0x40, "parser": self.parse_xgen }, # R718H4
-                { "type": 0x41, "parser": self.parse_xgen }, # R718IA2
-                { "type": 0x42, "parser": self.parse_xgen }, # R718IB2
+                { "type": 0x41, "parser": self.parse_R718IA2 }, # R718IA2
+                { "type": 0x42, "parser": self.parse_R718IA2 }, # R718IB2
                 { "type": 0x43, "parser": self.parse_xgen }, # R718J2
                 { "type": 0x44, "parser": self.parse_xgen }, # R718KA2
                 { "type": 0x45, "parser": self.parse_xgen }, # R718LB2
@@ -195,8 +250,8 @@ class parser(parser_template):
                 { "type": 0x73, "parser": self.parse_xgen }, # R816
                 { "type": 0x74, "parser": self.parse_xgen }, # R730IA
                 { "type": 0x75, "parser": self.parse_xgen }, # R730IB
-                { "type": 0x76, "parser": self.parse_xgen }, # R730IA2
-                { "type": 0x77, "parser": self.parse_xgen }, # R730IB2
+                { "type": 0x76, "parser": self.parse_R718IA2 }, # R730IA2
+                { "type": 0x77, "parser": self.parse_R718IA2 }, # R730IB2
                 { "type": 0x78, "parser": self.parse_xgen }, # R730CJ2
                 { "type": 0x79, "parser": self.parse_xgen }, # R730CK2
                 { "type": 0x7A, "parser": self.parse_xgen }, # R730CT2
@@ -258,18 +313,21 @@ if __name__ == "__main__":
         test_data = [sys.argv[1]]
     else:
         test_data = [
-                { "data": "010B012409EA1A90000000",
+                { "data": "01 0B 01 24 09EA 1A90 000000",
                  "result": { "batt": 3.6, "temp": 25.38, "humid": 68.0,
                             "data_type": 11 } },
-                { "data": "010B0124FC181A90000000",
+                { "data": "01 0B 01 24 FC18 1A90 000000",
                  "result": { "batt": 3.6, "temp": -10.0, "humid": 68.0,
                             "data_type": 11 } },
-                { "data": "010B019F09EA1A90000000",
+                { "data": "01 0B 01 9F 09EA 1A90 000000",
                  "result": { "batt": 3.1, "temp": 25.38, "humid": 68.0,
                             "data_type": 11 } },
-                { "data": "0166089F09EA1A9aff0200",
-                 "result": { "batt": 3.1, "ph": 25.38, "temp": 68.1, "orp":
-                            -255, "data_type": 102 } },
+                { "data": "01 66 08 9F 09EA 1A9a 000000",
+                 "result": { "batt": 3.1, "ph": 25.38,
+                            "temp_with_ph": 68.1 } },
+                { "data": "01 41 01 9F 09EA 1A9a 000000",
+                 "result": { "batt": 3.1, "adc_raw_value_1": 2538,
+                            "adc_raw_value_2": 6810 } },
             ]
     #
     p = parser()
