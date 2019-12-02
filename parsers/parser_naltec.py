@@ -26,19 +26,19 @@ class parser(parser_template):
         """
         0x0000 - 0xffff -> 0mA - 20mA
         """
-        return self.parse_number_le(data) / 0xffff * 20
+        return int(self.parse_number_le(data) / 0xffff * 20)
 
     def parse_voltage_10V(self, data):
         """
         0x0000 - 0xffff -> 0V - 10V
         """
-        return self.parse_number_le(data) / 0xffff * 10
+        return int(self.parse_number_le(data) / 0xffff * 10)
 
     def parse_thermocouple(self, data):
         """
         -200 - 1820 C -> 0.0625
         """
-        return self.parse_number_le(data)
+        return round(float(self.parse_signed_number_le(data)*0.0625),4)
 
     def parse_payload_7f(self, byte_data):
         """
@@ -121,11 +121,33 @@ if __name__ == "__main__":
         test_data = [sys.argv[1]]
     else:
         test_data = [
-            "7f ff ff", #  10.2 mV,  -1 C
-            "7f 19 d8", #  1.00 mV, -40 C
-            "7f 01 00", #  0.04 mV,   0 C
-            "7f 00 7d", #  0.00 mV, 125 C
+                { "data": "7f ff ff",
+                 "result": { "hdr": 0x7f, "vit": 10.2, "temp": -1 } },
+                { "data": "7f 19 d8",
+                 "result": { "hdr": 0x7f, "vit": 1.00, "temp": -40 } },
+                { "data": "7f 01 00",
+                 "result": { "hdr": 0x7f, "vit": 0.04, "temp": 0 } },
+                { "data": "7f 00 7d",
+                 "result": { "hdr": 0x7f, "vit": 0.00, "temp": 125 } },
+                { "data": "23 7f ff 00 00 ff ff 00 00 ff ff",
+                 "result": { "hdr": 0x23, "vit": 5.08, "temp": -1,
+                        "current_input_1": 0,
+                        "current_input_2": 20,
+                        "voltage_input_1": 0,
+                        "voltage_input_2": 10, } },
+                { "data": "24 00 d8 80 f3 90 fc 90 fc 90 fc",
+                 "result": { "hdr": 0x24, "vit": 0.00, "temp": -40,
+                        "thermocouple_1": -200.0,
+                        "thermocouple_2": -55.0,
+                        "thermocouple_3": -55.0,
+                        "thermocouple_4": -55.0, } },
+                { "data": "24 00 7d ff ff 00 00 c0 71 90 fc",
+                 "result": { "hdr": 0x24, "vit": 0.00, "temp": 125,
+                        "thermocouple_1": -0.0625,
+                        "thermocouple_2": 0.0,
+                        "thermocouple_3": 1820.0,
+                        "thermocouple_4": -55.0, } },
             ]
     #
     p = parser()
-    p.test(test_data)
+    p.test_eval(test_data)
