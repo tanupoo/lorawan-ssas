@@ -51,6 +51,35 @@ psql (PostgreSQL) 9.5.19
 
 If you see the version, the installation is successful.
 
+- Give access right to the demo user.
+
+Firstly you have to know the path to the pg_hba.conf.
+
+```
+lorawan@ubuntu:~/ssas$ ls /etc/postgresql/*/main/pg_hba.conf 
+/etc/postgresql/9.5/main/pg_hba.conf
+```
+
+Edit this pg_hba.conf.
+Find the following line and replace "peer" to "md5".
+
+OLD:
+```
+# TYPE  DATABASE        USER            ADDRESS                 METHOD
+local   all             all                                     peer
+```
+
+NEW:
+```
+local   all             all                                     md5
+```
+
+And, restart postgresql.
+
+```
+sudo systemctl restart postgresql
+```
+
 - Create database and user.
 - For example here, the database name is sensors, and the user name is demo.
 
@@ -76,9 +105,16 @@ CREATE ROLE demo PASSWORD 'md5f2443dbccfab4177613a84931d5769e2' NOSUPERUSER NOCR
 You can check if this step is successful like below.
 
 ```
-lorawan@ubuntu:~$ psql -h 127.0.0.1 -d sensors -U demo -W -c '\l' | grep sensors
+lorawan@ubuntu:~$ psql -h 127.0.0.1 -d sensors -U demo -c '\l' | grep sensors
 Password for user demo: **demo123**
  sensors   | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | 
+```
+
+You can bypass to input the password from the local. (OPTION)
+
+```
+echo 127.0.0.1:5432:sensors:demo:demo123 >> $HOME/.pgpass
+chmod 600 $HOME/.pgpass
 ```
 
 ## setup lorawan-ssas
