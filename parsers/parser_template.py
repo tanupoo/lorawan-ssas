@@ -17,6 +17,7 @@ class parser_template():
         format_tab: the structure of the format table is a list like below:
             a dict key, a function, start byte, end byte
             e.g. [ ..., ( "accel_x", self.parse_acx, 13, 15 ), ... ]
+            if the function is None, the key is skipped.
         """
         ret = {}
         for f in format_tab:
