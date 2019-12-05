@@ -160,10 +160,10 @@ Edit config.json like below.
 ```
 {   
     "debug_level": 0,
-    "log_file": "lrwssas.log",
+    "log_file": "/home/lorawan/ssas/lrwssas.log",
     "server_addr": "",
     "server_port": "18886",
-    "server_cert": "server.crt",
+    "server_cert": "/home/lorawan/ssas/server.crt",
     "sensors": {
         "3499000DB5E3818C" : { "handler": "Netvox_R711" },
         "000064FFFEA3819F" : { "handler": "YOKOGAWA_XS770A" }
