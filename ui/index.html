@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Sending data to a LoRaWAN device</title>
+
+<script type="text/javascript">
+
+let ws;
+
+function ev_click_submit(a)
+{
+    put_state("validating the values.");
+    // check DevEUI
+    let deveui = document.getElementById("deveui").value.toUpperCase();
+    if (deveui == "") {
+        put_state("DevEUI must be specified.");
+        return;
+    }
+    if (!/^[0-9a-fA-F]+$/.test(deveui)) {
+        put_state("DevEUI doesn't look HEX string.");
+        return;
+    }
+    if (deveui.length != 16) {
+        put_state("the length of DevEUI must be equal to 16.");
+        return;
+    }
+    // check FPort
+    let fport = document.getElementById("fport").value;
+    if (deveui == "") {
+        put_state("FPort must be specified.");
+        return;
+    }
+    if (fport.length % 2 == 0 && /^0x[0-9a-fA-F]+$/.test(fport)) {
+        fport = parseInt(fport,16).toString();
+    } else if (/^[0-9]+/.test(fport)) {
+        fport = parseInt(fport);
+    } else {
+        put_state("FPort doesn't look a number.")
+        return;
+    }
+    // check data
+    let hexstr = document.getElementById("hexdata").value.toUpperCase();
+    /*
+    if (hexstr == "") {
+        put_state("data must be specified.");
+        return;
+    }
+    */
+    if (hexstr != "") {
+        if (!/^[0-9a-fA-F]+$/.test(hexstr)) {
+            put_state("the data doesn't look HEX string.");
+            return;
+        }
+        if (hexstr.length % 2 != 0) {
+            put_state("the length of data must be in even.");
+            return;
+        }
+    }
+    //
+    let confirmed = document.getElementById("confirmed").checked;
+    let flush_queue = document.getElementById("flush-queue").checked;
+    // make a request and send it.
+    request = { "deveui": deveui, "fport": fport, "hexdata": hexstr,
+        "confirmed": confirmed, "flush_queue": flush_queue }
+    put_state("sending data.");
+    console.log("request:", request);
+    ws.send(JSON.stringify(request));
+}
+
+function put_state(text)
+{
+    let x = document.getElementById("div-state");
+    x.innerHTML = text;
+}
+
+function ev_load()
+{
+    // making the button.
+    let btn = document.getElementById("btn-submit");
+    btn.addEventListener("click", ev_click_submit, false);
+    // setup ws.
+    console.log(server_url);
+    server_url = "ws://" + window.location.host + "/ws";
+    ws = new WebSocket(server_url);
+    ws.onmessage = function (event) {
+        var content = JSON.parse(event.data);
+        if (content.msg_type == "app_data") {
+            // show app_data into the section div-data.
+            // XXX
+            put_state(JSON.stringify(content));
+        }
+        else if (content.msg_type == "response") {
+            // show result into the div-state.
+            put_state(JSON.stringify(content["result"]));
+        }
+        else {
+            // show content into the div-state.
+            put_state(JSON.stringify(content));
+        }
+    };
+}
+
+window.addEventListener("load", ev_load, false);
+
+</script>
+<style type="text/css">
+.data
+{
+    font-family: "Courier New", Courier, monospace;
+}
+#deveui
+{
+    width:16em;
+}
+#fport
+{
+    width:8em;
+}
+#hexdata
+{
+    width:16em;
+    height:8em;
+    vertical-align:top;
+}
+</style>
+
+</head>
+<body>
+
+    <hr>
+    <div id="div-data">
+    Input your data to send to the device. (case insensitive)<br>
+    <div>DevEUI: <input type="text" id="deveui" class="data" placeholder="HEX strings." value="0102030405060708">e.g. 0102030405060708</div>
+    <div>FPort: <input type="text" id="fport" class="data" placeholder="HEX string or a decimal value" value="8">e.g. 0x10 in hex, or 16 in decimal.</div>
+    <div>Data: <textarea id="hexdata" class="data" placeholder="a series of HEX string.">0102eeff</textarea>e.g. 0102eeff, 0102EEFF</div>
+    <div>Confirmed: <input id="confirmed" type="checkbox" /></div>
+    <div>Flush message queue: <input id="flush-queue" type="checkbox" /></div>
+    <div><input id="btn-submit" type="button" value="Submit" /></div>
+    </div>
+
+    <hr>
+    <div id="div-state">
+    </div>
+
+    <hr>
+    <div id="div-mon"> </div>
+
+</div>
+
+</body>
+</html>
+
