@@ -140,6 +140,10 @@ def proc_tp_uplink(kv_data):
         kv_data[KEY_APP_DATA] = kv_payload
         if handler.db_conn:
             logger.debug("db_submit() has been called.")
+            if config[CONF_DEBUG_LEVEL] > 1:
+                logger.debug("kv_data:")
+                for k,v in kv_data.items():
+                    logger.debug("{}: {}".format(k,v))
             handler.db_conn.db_submit(kv_data)
     return 0
 
