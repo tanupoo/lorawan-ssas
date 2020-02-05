@@ -1,0 +1,60 @@
+{
+    "debug_level": 0,
+    "log_file": "/home/lorawan/ssas/lrwssas.log",
+    "server_addr": "",
+    "server_port": "18886",
+    "server_cert": "/home/lorawan/ssas/server.crt",
+    "sensors": {
+        "3499000DB5E3818C" : {
+            "handler": "Netvox_R711"
+        },
+        "000064FFFEA3819F" : {
+            "handler": "YOKOGAWA_XS770A"
+        }
+    },
+    "handlers": {
+        "Netvox_R711": {
+            "parser": "netvox",
+            "db": {
+                "connector": "postgres",
+                "args": {
+                    "db_connect": "host=127.0.0.1 port=5432 dbname=sensors user=demo password=demo123",
+
+"sql_create_table": "create table if not exists raw_r711_data (batt float4, temp float4, humid float4)",
+
+"sql_insert_table": "insert into raw_r711_data (batt, temp, humid) values (%(batt)s, %(temp)s, %(humid)s)"
+
+                }
+            }
+        },
+
+        "YOKOGAWA_XS770A": {
+            "parser": "yokogawa",
+            "db": {
+                "connector": "postgres",
+                "args": {
+                    "db_connect": "host=127.0.0.1 port=5432 dbname=sensors user=demo password=demo123",
+
+"sql_create_table": "create table if not exists raw_xs770a_data (accel float4, velocity float4, temp float4, ts timestamptz, deveui text, rssi float4, snr float4)",
+
+"sql_insert_table": "insert into raw_xs770a_data (accel, velocity, temp, ts, deveui, rssi, snr) values (%(accel)s, %(velocity)s, %(temp)s, %(ts)s, %(deveui)s, %(rssi)s, %(snr)s)"
+
+                }
+            }
+        }
+
+        "YOKOGAWA_XS770A": {
+            "parser": "yokogawa",
+            "db": {
+                "connector": "postgres",
+                "args": {
+                    "db_connect": "host=127.0.0.1 port=5432 dbname=sensors user=demo password=demo123",
+                    "sql_create_table": "create table if not exists xs770a_data ( ts timestamptz, deveui text, rssi float4, snr float4, accel float4, velocity float4, temp float4)",
+                    "sql_insert_table": "insert into xs770a_data ( ts, deveui, rssi, snr, accel, velocity, temp) values ( %(ts)s, %(deveui)s, %(rssi)s, %(snr)s, %(accel)s, %(velocity)s, %(temp)s )"
+                }
+            }
+        }
+    }
+
+    }
+}
