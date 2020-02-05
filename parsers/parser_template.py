@@ -1,5 +1,8 @@
 from binascii import a2b_hex
-from app_util import default_logger
+try:
+    from app_util import default_logger
+except:
+    default_logger = None
 
 class parser_template():
 
