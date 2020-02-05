@@ -111,6 +111,31 @@ class parser(parser_template):
                   .format(data[2],data[1]))
             return False
 
+    def parse_R718WA(self, data):
+        """
+        Device: R718IA2, R718IB2, R730IA2, R730IB2
+        nb_bytes Field
+           1     DeviceType: 0x41, 0x42, 0x76, 0x77
+           1     ReportType: 0x01
+           1     Battery, 0.1V
+           2     ADCRawValue1, 1mV
+           2     ADCRawValue2, 1mV
+           3     Reserved
+        """
+        raise
+        if data[2] == 0x01:
+            return self.parse_by_format(data, [
+                    # function, start byte, end byte
+                    ( "batt", self.parse_batt, 3, 4 ),
+                    ( "adc_raw_value_1", self.parse_number, 4, 6 ),
+                    ( "adc_raw_value_2", self.parse_number, 6, 8 ),
+                    ])
+        else:
+            print("ERROR: unsupported DataType {} for DeviceType {} of netvox"
+                  .format(data[2],data[1]))
+            return False
+
+    
     def parse_xgen(self, data):
         """
         For general purpose.
@@ -150,7 +175,7 @@ class parser(parser_template):
                 { "type": 0x0F, "parser": self.parse_xgen }, # R211
                 { "type": 0x10, "parser": self.parse_xgen }, # RB02I
                 { "type": 0x11, "parser": self.parse_xgen }, # RA02C
-                { "type": 0x12, "parser": self.parse_xgen }, # R718WB
+                { "type": 0x12, "parser": self.parse_R718WA }, # R718WB
                 { "type": 0x13, "parser": self.parse_R711 }, # R718AB
                 { "type": 0x14, "parser": self.parse_xgen }, # R718B2
                 { "type": 0x15, "parser": self.parse_xgen }, # R718CJ2
@@ -182,7 +207,7 @@ class parser(parser_template):
                 { "type": 0x2F, "parser": self.parse_xgen }, # R718DA2
                 { "type": 0x30, "parser": self.parse_xgen }, # R718S
                 { "type": 0x31, "parser": self.parse_xgen }, # R718T
-                { "type": 0x32, "parser": self.parse_xgen }, # R718WA
+                { "type": 0x32, "parser": self.parse_R718WA }, # R718WA
                 { "type": 0x33, "parser": self.parse_xgen }, # R718WD
                 { "type": 0x34, "parser": self.parse_xgen }, # R718X
                 { "type": 0x35, "parser": self.parse_xgen }, # RA0716
@@ -265,9 +290,9 @@ class parser(parser_template):
                 { "type": 0x82, "parser": self.parse_xgen }, # R730MBA
                 { "type": 0x83, "parser": self.parse_xgen }, # R730MBB
                 { "type": 0x84, "parser": self.parse_xgen }, # R730MBC
-                { "type": 0x85, "parser": self.parse_xgen }, # R730WA
+                { "type": 0x85, "parser": self.parse_R718WA }, # R730WA
                 { "type": 0x86, "parser": self.parse_xgen }, # R730WA2
-                { "type": 0x87, "parser": self.parse_xgen }, # R730WB
+                { "type": 0x87, "parser": self.parse_R718WA }, # R730WB
                 { "type": 0x88, "parser": self.parse_xgen }, # R730WB2
                 { "type": 0x89, "parser": self.parse_xgen }, # R730DA
                 { "type": 0x8A, "parser": self.parse_xgen }, # R730DA2
@@ -328,6 +353,10 @@ if __name__ == "__main__":
                 { "data": "01 41 01 9F 09EA 1A9a 000000",
                  "result": { "batt": 3.1, "adc_raw_value_1": 2538,
                             "adc_raw_value_2": 6810 } },
+                { "data": "01 32 01 9F 01 000000 000000",
+                 "result": { "batt": 3.1, "leaked": True, } },
+                { "data": "01 12 01 9F 00 000000 000000",
+                 "result": { "batt": 3.1, "leaked": False, } },
             ]
     #
     p = parser()
