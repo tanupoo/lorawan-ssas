@@ -26,6 +26,7 @@ import dateutil.parser
 
 def iso8601_to_ms(s, tz="GMT"):
     """
+    adding milliseconds into the time string.
     tz is a default timezone. If the string looks a naive dateime string,
     it is converted into the aware datetime object with the tz string.
     """
