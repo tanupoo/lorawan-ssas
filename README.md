@@ -29,7 +29,7 @@ For example, if you use MongoDB, you can install pymongo only.
 If you use whole database, you have to install everything.
 That's why it depends.
 
-- MongoDB
+- MongoDB 2.6
 
 If you use MongoDB, you should install pymongo, at least 2.4.9 or later.
 And, you have to install requests module for using the REST API of MongoDB.
