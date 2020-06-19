@@ -89,16 +89,38 @@ async def send_downlink(message):
 #
 async def ws_handler(request):
     """
-    return json string.
-        "msg_type": "app_data"
-            "dev_eui", "rssi", "snr", "dev_type", "dev_name", "app_data"
-        "msg_type": "response"
-            "timestamp", "result"
+    return value in json string.
+        - "msg_type": "app_data"
+            {
+                "msg_type": "app_data", # required.
+                "timestamp": "...",     # required.
+                "dev_eui": "...",       # required.
+                "dev_name": "xxx",      # taken from config.
+                "lat": "...",
+                "lon": "...",
+                "app_data": {           # required.
+                    "rssi": "xxx",      # required.
+                    "snr": "xxx",       # required.
+                    "hex_data": "xxx",  # required, taken from the UL payload.
+                    "key1": "value1",
+                    "key2": "value2",
+                    ...
+                }
+            }
+        - "msg_type": "response"
+            {
+                "msg_type": "response", # required.
+                "timestamp": "...",     # required.
+                "result": {             # required.
+                    "key1": "value1",   # required.
+                    "key2": "value2",
+                    ...
+                }
+            }
     """
-
     ws = web.WebSocketResponse()
     ret = await ws.prepare(request)
-    print("ws session starts with:", request)
+    logger.debug("ws session starts with:", request)
 
     while True:
         #result await yah(ws)
@@ -107,8 +129,7 @@ async def ws_handler(request):
             await ws.close()
             break
 
-    print("ws session closed")
-
+    logger.debug("ws session closed")
     return ws
 
 #
@@ -134,8 +155,9 @@ async def get_doc_handler(request):
 #
 # misc
 #
-def set_logger(prog_name="", log_file=None, logging_stdout=False,
+def set_logger(log_file=None, logging_stdout=False,
                debug_mode=False):
+    # XXX need to review this set_logger() code.
     def get_logging_handler(channel, debug_mode):
         channel.setFormatter(logging.Formatter(fmt=LOG_FMT,
                                                datefmt=LOG_DATE_FMT))
@@ -148,7 +170,7 @@ def set_logger(prog_name="", log_file=None, logging_stdout=False,
     # set logger.
     #   log_file: a file name for logging.
     logging.basicConfig()
-    logger = logging.getLogger(prog_name)
+    logger = logging.getLogger()
     if logging_stdout is True:
         logger.addHandler(get_logging_handler(logging.StreamHandler(),
                                               debug_mode))
@@ -188,11 +210,9 @@ opt.raw_token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzY29wZSI6WyJTVUJTQ1JJQk
 opt.ws_port = 5678
 
 # set logger.
-logger = set_logger(prog_name="lorawan-ssas-downloder",
-                    log_file=opt.log_file,
+logger = set_logger(log_file=opt.log_file,
                     logging_stdout=opt.logging_stdout,
                     debug_mode=opt.debug)
-#
 # XXX the files provided should be fixed.
 app = web.Application(logger=logger)
 app.router.add_route("POST", "/dl", downlink_handler)
