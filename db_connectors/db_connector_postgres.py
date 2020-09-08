@@ -43,13 +43,12 @@ class db_connector(db_connector_template):
         """
         if self.cur is None:
             raise ValueError("postgres is not ready.")
-        app_data = self.get_app_data(kv_data, **kwargs)
-        if app_data is False:
+        if kv_data is False:
             return False
         if self.sql_insert_table is None:
             self.logger.error("sql_insert_table is not defined.")
             return False
-        self.cur.execute(self.sql_insert_table, app_data)
+        self.cur.execute(self.sql_insert_table, kv_data)
         self.con.commit()
         if self.debug_level > 0:
             self.logger.debug("Succeeded submitting data into postgress.")

@@ -2,9 +2,12 @@ Super Simple LoRaWAN Application Server
 =======================================
 
 This is a super simple LoRaWAN AS (Application Server).
+
 It support the following features:
+- asyncio
 - receives a POST message containing a JSON-like message from a network server.
 - parses the application message and stores data into a database you specified.
+- WebSocket to communicate with a user's application.
 
 ## Requirements
 
@@ -13,15 +16,8 @@ It support the following features:
 Python modules:
 
 - dateutils
-- gevent
-- bottle
 
 In the Linux distributions, you may install further modules.
-
-Note that the gevent 1.3 breaks the bottle binding.
-You have to install the gevent 1.2.2 instead.
-
-    pip install gevent==1.2.2
 
 ### Depending on your configuration.
 
@@ -29,28 +25,21 @@ For example, if you use MongoDB, you can install pymongo only.
 If you use whole database, you have to install everything.
 That's why it depends.
 
-- MongoDB 2.6
+- MongoDB 4.x
 
-If you use MongoDB, you should install pymongo, at least 2.4.9 or later.
-And, you have to install requests module for using the REST API of MongoDB.
+If you use MongoDB, you need to install motor.
 
 - PostgreSQL
 
 psycopg2-binary, you should install this version instead of psycopg2.
 
-- SQLite
-
-In the Linux distributions, sqlite3 may not be installed initially and
-your python may not sadly support sqlite3.
-In this case, you have to install sqlite3-dev by your self
-**before** you install python.  Otherwise, it is failed to import sqlite3.
-
 ## Limitations
 
-- Supports the JSON type message sent by Actility NS (Network Server).
-- Providing data to show, you have to integrate other tools like superset.
+- For uplink message, supporting HTTPS POST message with JSON format.
+  See a sample of the message below.
+- No support to show data.  You need other tools like superset or grafana.
 
-## Application Message Handler
+## Application Message Handlers
 
 The following message handlers are embedded.
 
@@ -61,7 +50,16 @@ The following message handlers are embedded.
 - [NALTEC](http://www.naltec.co.jp/english/): NLS-LW
 - [Netvox](http://www.netvox.com.tw/index.html): R711, R718A, R718AB, R710A, and some PH sensors.
 
-You can add your handler.  Please refer to other parsers.
+You can add your handler.
+Please refer to other parsers under the directory, parser.
+
+## NS Handers
+
+## DB Handlers
+
+- postgreql
+- sqlite3
+- MongodB
 
 ## How to install
 
@@ -106,26 +104,7 @@ you can understand what it does.
 Here is the general installation guide with MongoDB.
 See also [install into Ubuntu 16.04 with PostgreSQL](INSTALL-Ubuntu.md).
 
-### MongoDB
-
-If you don't use MongoDB, you don't need this section.
-
-It should run in the same host on which lrwssas.py runs.
-The REST option is required.
-For this, You have to specify "rest = true" in the mongodb.conf.
-
-To check whether your MongoDB can have REST API,
-you can use the following command for example.
-
-    curl -d '{"a":1}' http://localhost:28017/test_db/test_col/
-
-If your configuration is correct, you can get a response like below:
-
-    { "ok" : true }
-
-The port number 28017 may be different in your system.
-
-### lrwssas
+## lrwssas
 
 This is the main program.
 
@@ -150,7 +129,8 @@ if you want to see debug messages, consider to use the -d options like below.
 ## End point
 
 - /up
-- /down (not yet)
+- /down
+- /ws
 
 ## How to test
 
@@ -165,59 +145,6 @@ You may add the -k option.  See below for this reference.
     % curl -k -v -H 'Content-Type: application/json' \
           -d '@test-data.json' https://localhost:18886/up
 
-## security considerations
-
-The end point of the mongodb should be 127.0.0.1.
-Otherwise, any user can be accessed into your mongodb from the Internel.
-For this application server,
-the port number of 80, 8080, or something like expectable ones
-should not be used.
-
-## debugging
-
-### mongodb
-
-login into the console of mongodb.
-
-    mongo 127.0.0.1:<port_number>
-
-or, if you use defualt port number, just type mongo.
-
-    mongo
-
-then, select lorawan database.
-
-    > use lorawan
-
-if there is no data received from NS, lorawan doesn't exist.
-please wait a while until you will receive something.
-
-- show all data in the database.
-
-    > db.app.find({},{"_id":0})
-
-- show the list of DevEUI in the database.
-
-    > db.app.distinct("DevEUI")
-
-- show the latest 3 data in descending order for the DevEUI specified.
-
-    > db.app.find({"DevEUI":"DEADBEEF00112233"},{"_id":0}).sort({$natural:-1}).limit(3)
-
-- show the latest data of each DevEUI.
-
-    > db.app.aggregate([
-        { "$group": {
-            "_id":"$DevEUI",
-            "latest": { "$last":"$DevEUI" },
-        }},
-        { "$project": {
-            "_id":0,
-            "DevEUI":"$_id",
-            "latest":"$latest"
-        }}
-        ])
-
 ## sample message from NS
 
 Here is an example message that lrwssas assumes to be sent from NS.
@@ -229,40 +156,17 @@ Here is an example message that lrwssas assumes to be sent from NS.
         "DevAddr" : "BEEF0001",
         "Time" : "2017-03-24T06:53:32.502+01:00",
         "payload_hex" : "0000000058d4b41b420ea943430bbb24021d000000000000",
-        "Lrcid" : "00000201",
         "Lrrid" : "69606FD0",
         "LrrLAT" : "35.665005",
         "LrrRSSI" : "0.000000",
         "LrrSNR" : "-20.000000",
         "LrrLON" : "139.731293",
-        "DevLrrCnt" : "1",
-        "Lrrs" : {
-            "Lrr" : {
-            "LrrESP" : "-20.043213",
-            "LrrSNR" : "-20.000000",
-            "Lrrid" : "69606FD0",
-            "Chain" : "0",
-            "LrrRSSI" : "0.000000"
-            }
-        },
-        "CustomerID" : "100000778",
-        "CustomerData" : {
-            "alr" : {
-            "pro" : "ADRF/DEMO",
-            "ver" : "1"
-            }
-        },
         "FCntUp" : "7970",
-        "Channel" : "LC5",
-        "SubBand" : "G0",
-        "ModelCfg" : "0",
-        "Late" : "0",
         "ADRbit" : "1",
         "FCntDn" : "2",
         "SpFact" : "12",
         "MType" : "4",
         "FPort" : "2",
-        "mic_hex" : "6fa15f9f"
     }
 }
 ```

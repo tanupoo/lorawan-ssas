@@ -1,5 +1,5 @@
 from app_util import default_logger
-from app_util import iso8601_to_fixed_ts
+#from app_util import iso8601_to_fixed_ts
 
 class db_connector_template():
 
@@ -35,10 +35,9 @@ class db_connector_template():
         '''
         return True
 
+    """
     def get_app_data(self, kv_data, **kwargs):
-        """
-        if something error happenes, return False.
-        """
+        #if something error happenes, return False.
         app_data = kv_data.get("__app_data")
         if app_data is None:
             self.logger.error("the payload haven't been parsed.")
@@ -50,3 +49,4 @@ class db_connector_template():
         if self.debug_level > 0:
             self.logger.debug("app_data = {}".format(app_data))
         return app_data
+    """

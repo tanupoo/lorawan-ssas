@@ -1,57 +1,52 @@
 from db_connector_template import db_connector_template
-import requests
-import json
-from app_util import iso8601_to_ms
+from pymongo import MongoClient
+import pymongo.errors
 
 class db_connector(db_connector_template):
 
     '''
-    you can use the following code to submit data into the default
-    mongodb.
-
-        from connector_mongodb import connector_mongodb
-
-        class handler(connector_mongodb):
-            pass
+    e.g.
+        from db_connector_mongodb import db_connector
 
         p = handler(logger=self.logger, debug_level=self.debug_level,
-                   db_uri="your_mongodb_rest_api")
+                   db_connect="parameter_for_connect")
         p.submit(kv_data)
 
+    e.g. of <parameter_for_connect>
+        host=127.0.0.1 port=5432 dbname=postgres user=demo password=demo1
     '''
     def db_init(self, **kwargs):
         """
-        db_uri must be passed.
+        db_name: default is "lorawan".
+        db_collection: default is "sensors".
+        db_addr: default is "localhost".
+        db_port: default is 27017.
+        db_timeout: default is 2000. (2 sec)
         """
-        self.db_uri = kwargs.get("db_uri")
-        if self.db_uri is None:
-            raise ValueError("db_uri is required in the handler.")
+        self.db_name = kwargs.setdefault("db_name", "lorawan")
+        self.db_col_name = kwargs.setdefault("db_collection", "sensors")
+        self.db_addr = kwargs.setdefault("db_addr", "localhost")
+        self.db_port = kwargs.setdefault("db_port", 27017)
+        self.db_username = kwargs.setdefault("db_username", None)
+        self.db_password = kwargs.setdefault("db_password", None)
+        self.timeout = kwargs.setdefault("db_timeout", 2000)
+        self.logger.info(f"""Connect MongoDB on {self.db_addr}:{self.db_port}
+                         for {self.db_name}.{self.db_col_name}""")
+        self.con = MongoClient(self.db_addr, self.db_port,
+                               serverSelectionTimeoutMS=self.timeout,
+                               username=self.db_username,
+                               password=self.db_password)
+        self.db = self.con[self.db_name]
+        self.col = self.db[self.db_col_name]
         return True
 
     def db_submit(self, kv_data, **kwargs):
-        '''
-        - submit json data into the MongoDB via REST API.
-        - assuming that all keys are exist in the json data.
-          because it assumes that proc_tp_uplink() has been called already.
-        - assuming that the "Time" key has the ISO8601 string value like below:
-            "2017-03-24T06:53:32.502+01:00".
-        - if the string looks naive, it will convert into the timezone
-          when you specified at calling db_init().
-        '''
-        kv_data["Time"] = {"$date": iso8601_to_ms(kv_data["Time"])}
-        # submit.
-        ret = requests.post(self.db_uri, data=json.dumps(kv_data))
-        if ret.ok:
-            ret_value = ret.json()
-            if ret_value["ok"] is True:
-                if self.debug_level > 0:
-                    self.logger.debug("Succeeded submitting data into MongoDB.")
-                    return True
-            else:
-                self.logger.error("Response from MongoDB: {}".format(ret_value))
-                return False
-        else:
-            self.logger.error("Failed submitting data into MongoDB. {} {} {}"
-                .format(ret.status_code, ret.reason, ret.text))
+        try:
+            self.col.insert_one(kv_data)
+        except pymongo.errors.ServerSelectionTimeoutError as e:
+            self.logger.error("timeout, mongodb looks not ready yet.")
             return False
+        #
+        self.logger.debug("Succeeded submitting data into MongoDB.")
+        return True
 

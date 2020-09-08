@@ -8,21 +8,30 @@
 
 let ws;
 
+function check_deveui(deveui)
+{
+    // check DevEUI
+    if (deveui == "") {
+        put_state("DevEUI must be specified.");
+        return false;
+    }
+    if (!/^[0-9a-fA-F]+$/.test(deveui)) {
+        put_state("DevEUI doesn't look HEX string.");
+        return false;
+    }
+    if (deveui.length != 16) {
+        put_state("the length of DevEUI must be equal to 16.");
+        return false;
+    }
+    return true;
+}
+
 function ev_click_submit(a)
 {
     put_state("validating the values.");
     // check DevEUI
     let deveui = document.getElementById("deveui").value.toUpperCase();
-    if (deveui == "") {
-        put_state("DevEUI must be specified.");
-        return;
-    }
-    if (!/^[0-9a-fA-F]+$/.test(deveui)) {
-        put_state("DevEUI doesn't look HEX string.");
-        return;
-    }
-    if (deveui.length != 16) {
-        put_state("the length of DevEUI must be equal to 16.");
+    if (check_deveui(deveui) == false) {
         return;
     }
     // check FPort
@@ -61,34 +70,56 @@ function ev_click_submit(a)
     let confirmed = document.getElementById("confirmed").checked;
     let flush_queue = document.getElementById("flush-queue").checked;
     // make a request and send it.
-    request = { "deveui": deveui, "fport": fport, "hexdata": hexstr,
+    request = { "msg_type":"downlink", "deveui": deveui,
+        "hex_data": hexstr, "fport": fport,
         "confirmed": confirmed, "flush_queue": flush_queue }
     put_state("sending data.");
     console.log("request:", request);
     ws.send(JSON.stringify(request));
 }
 
+function ev_click_register(a)
+{
+    put_state("registering DevEUI.");
+    let deveui = document.getElementById("deveui").value.toUpperCase();
+    if (check_deveui(deveui) == false) {
+        return;
+    }
+    ws.send(JSON.stringify({ "msg_type":"register", "deveui": deveui }));
+}
+
 function put_state(text)
 {
     let x = document.getElementById("div-state");
-    x.innerHTML = text;
+    x.innerHTML = "Status: " + text;
+}
+
+function put_data(text)
+{
+    let x = document.getElementById("div-mon");
+    // XXX
+    x.innerHTML = JSON.stringify(text);
 }
 
 function ev_load()
 {
     // making the button.
-    let btn = document.getElementById("btn-submit");
-    btn.addEventListener("click", ev_click_submit, false);
+    document.getElementById("btn-submit")
+        .addEventListener("click", ev_click_submit, false);
+    document.getElementById("btn-register")
+        .addEventListener("click", ev_click_register, false);
     // setup ws.
-    console.log(server_url);
-    server_url = "ws://" + window.location.host + "/ws";
+    server_url = "wss://" + window.location.host + "/ws";
+    console.log("upgrading " + server_url);
     ws = new WebSocket(server_url);
+    ws.onerror = function (event) {
+        console.error(err);
+    };
     ws.onmessage = function (event) {
         var content = JSON.parse(event.data);
-        if (content.msg_type == "app_data") {
-            // show app_data into the section div-data.
-            // XXX
-            put_state(JSON.stringify(content));
+        if (content.msg_type == "uplink") {
+            // show app_data into the section div-mon.
+            put_data(content);
         }
         else if (content.msg_type == "response") {
             // show result into the div-state.
@@ -131,7 +162,7 @@ window.addEventListener("load", ev_load, false);
     <hr>
     <div id="div-data">
     Input your data to send to the device. (case insensitive)<br>
-    <div>DevEUI: <input type="text" id="deveui" class="data" placeholder="HEX strings." value="0102030405060708">e.g. 0102030405060708</div>
+    <div>DevEUI: <input type="text" id="deveui" class="data" placeholder="HEX strings.">e.g. 0102030405060708</div>
     <div>FPort: <input type="text" id="fport" class="data" placeholder="HEX string or a decimal value" value="8">e.g. 0x10 in hex, or 16 in decimal.</div>
     <div>Data: <textarea id="hexdata" class="data" placeholder="a series of HEX string.">0102eeff</textarea>e.g. 0102eeff, 0102EEFF</div>
     <div>Confirmed: <input id="confirmed" type="checkbox" /></div>
@@ -141,13 +172,14 @@ window.addEventListener("load", ev_load, false);
 
     <hr>
     <div id="div-state">
+        Status:
     </div>
 
     <hr>
+    <div><input id="btn-register" type="button" value="Register" /></div>
     <div id="div-mon"> </div>
 
 </div>
 
 </body>
 </html>
-
