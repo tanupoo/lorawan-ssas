@@ -11,22 +11,6 @@
         "LrrSNR" : "-20.000000",
         "LrrLON" : "139.731293",
         "DevLrrCnt" : "1",
-        "Lrrs" : {
-            "Lrr" : {
-            "LrrESP" : "-20.043213",
-            "LrrSNR" : "-20.000000",
-            "Lrrid" : "69606FD0",
-            "Chain" : "0",
-            "LrrRSSI" : "0.000000"
-            }
-        },
-        "CustomerID" : "100000778",
-        "CustomerData" : {
-            "alr" : {
-            "pro" : "ADRF/DEMO",
-            "ver" : "1"
-            }
-        },
         "FCntUp" : "7970",
         "Channel" : "LC5",
         "SubBand" : "G0",
