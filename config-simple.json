@@ -1,0 +1,30 @@
+{
+    "debug_level": 99,
+    "log_file": "/home/lorawan/ssas/lrwssas.log",
+    "server_addr": "",
+    "server_port": "18886",
+    "server_cert": "/home/lorawan/ssas/server.crt",
+    "sensors": {
+        "1000000000000002" : {
+            "name": "test-A",
+            "desc": "a test sensor A",
+            "handler": "MONGO"
+        },
+        "1000000000000003" : {
+            "name": "test-B",
+            "desc": "a test sensor B",
+            "handler": "MONGO"
+        },
+    },
+    "handlers": {
+        "MONGO": {
+            "parser": "",
+            "db": {
+                "connector": "mongodb",
+                "args": {
+                    "db_uri": "http://127.0.0.1:28017/lorawan/app/"
+                }
+            }
+        }
+    }
+}
