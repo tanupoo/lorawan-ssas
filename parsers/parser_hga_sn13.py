@@ -71,6 +71,7 @@ if __name__ == "__main__":
     else:
         test_data = [
             "0000000058d4b41b420ea943430bbb24021d000000000000",
+            "000000005F900CCE420EDE6E430B57B10438000000000000",
             ]
     p = parser()
     p.test(test_data)
