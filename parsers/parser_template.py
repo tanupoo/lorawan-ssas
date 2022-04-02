@@ -144,7 +144,7 @@ class parser_template():
                               .format(v,r[k]))
                         continue
             else:
-                print("  ERROR")
+                print("  ERROR: parse error.  maybe wrong length.")
 
     def test(self, test_data):
         """
@@ -159,4 +159,4 @@ class parser_template():
                 for k,v in v.items():
                     print("  {} = {}".format(k,v))
             else:
-                print("  ERROR")
+                print("  ERROR: parse error.  maybe wrong length.")
