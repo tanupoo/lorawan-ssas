@@ -41,7 +41,7 @@
 
                 }
             }
-        }
+        },
 
         "YOKOGAWA_XS770A": {
             "parser": "yokogawa",
@@ -56,5 +56,4 @@
         }
     }
 
-    }
 }
