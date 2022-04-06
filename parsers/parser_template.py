@@ -2,7 +2,9 @@ from binascii import a2b_hex
 try:
     from app_util import default_logger
 except:
-    default_logger = None
+    import sys
+    sys.path.insert(0, "../")
+    from app_util import default_logger
 
 class parser_template():
 
@@ -129,7 +131,7 @@ class parser_template():
         """
         for s in test_data:
             if not ("data" in s and "result" in s):
-                print("ERROR: invalid data, both data and result must exist.")
+                self.logger.error("invalid data, both data and result must exist.")
             s["data"] = "".join(s["data"].split())
             print("TEST:", s["data"])
             r = self.parse_hex(s["data"]);
