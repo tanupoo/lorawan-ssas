@@ -132,6 +132,7 @@ class parser_template():
 
     def test_eval(self, test_data):
         """
+        **FOR TEST USE**
         test_data: a list of test data in hex string.
             e.g. [ { "data":"01020304", "result": { "temp:...} }, ... ]
         """
@@ -156,6 +157,7 @@ class parser_template():
 
     def test(self, test_data):
         """
+        **FOR TEST USE**
         test_data: a list of test data in hex string.
             e.g. [ "01020304", "ffff0000", ... ]
         """
