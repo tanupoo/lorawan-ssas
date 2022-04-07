@@ -44,7 +44,7 @@ psycopg2-binary, you should install this version instead of psycopg2.
 The following message handlers are embedded.
 
 - [Highgain Antenna](http://www.highgain.co.kr/): HGOK IoT SN13
-- [Globalsat](https://www.globalsat.com.tw/en/): LT-100, LW-360HR
+- [Globalsat](https://www.globalsat.com.tw/en/): LT-100, LW-360HR, LT-501H
 - [Yokogawa](https://www.yokogawa.com/): XS770A
 - [Greenhouse](https://www.green-house.co.jp/): MSNLRA, Water Level Sensor, 401D
 - [NALTEC](http://www.naltec.co.jp/english/): NLS-LW
