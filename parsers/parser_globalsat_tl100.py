@@ -2,7 +2,7 @@ from parser_template import parser_template
 
 class parser(parser_template):
     """
-    The payload parser for Globalsat TL-100.
+    The payload parser for Globalsat LT-100.
     message format is:
         byte: description
         1: device_type
