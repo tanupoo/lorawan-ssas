@@ -2,7 +2,9 @@ from binascii import a2b_hex
 try:
     from app_util import default_logger
 except:
-    default_logger = None
+    import sys
+    sys.path.insert(0, "../")
+    from app_util import default_logger
 
 class parser_template():
 
@@ -76,6 +78,12 @@ class parser_template():
         """
         return int.from_bytes(data,"little",signed=True)
 
+    def parse_hex(self, data):
+        """
+        convert bytes to a hex string.
+        """
+        return data.hex()
+
     def parse_nothing(self, data):
         """
         return data as it is.
@@ -89,7 +97,7 @@ class parser_template():
         """
         raise NotImplementedError
 
-    def parse_hex(self, hex_string):
+    def parse_bytes_hex(self, hex_string):
         """
         - parse the payload in hex string and return a Python dict object.
         - the return value:
@@ -129,10 +137,10 @@ class parser_template():
         """
         for s in test_data:
             if not ("data" in s and "result" in s):
-                print("ERROR: invalid data, both data and result must exist.")
+                self.logger.error("invalid data, both data and result must exist.")
             s["data"] = "".join(s["data"].split())
             print("TEST:", s["data"])
-            r = self.parse_hex(s["data"]);
+            r = self.parse_bytes_hex(s["data"]);
             if r is not False:
                 for k,v in s["result"].items():
                     if k not in r:
@@ -144,7 +152,7 @@ class parser_template():
                               .format(v,r[k]))
                         continue
             else:
-                print("  ERROR")
+                print("  ERROR: parse error.  maybe wrong length.")
 
     def test(self, test_data):
         """
@@ -154,9 +162,9 @@ class parser_template():
         for s in test_data:
             s = "".join(s.split())
             print("TEST:", s)
-            v = self.parse_hex(s);
+            v = self.parse_bytes_hex(s);
             if v is not False:
                 for k,v in v.items():
                     print("  {} = {}".format(k,v))
             else:
-                print("  ERROR")
+                print("  ERROR: parse error.  maybe wrong length.")
