@@ -24,10 +24,12 @@ class parser(parser_template):
         2: Step Count
         2: Distance
     """
-    def parse_gis(self, data):
+    def parse_gcv(self, data):
         """
+        Geographic Coordinate Value
         latitude, longitude, little endien.
-        e.g. 0x79967e08 -> 142.513785
+        e.g. 0x073dc4db -> 121488603 / 1000000 -> 121.488603
+        e.g. 0x63737d01 ->  24996633 / 1000000 ->  24.996633
         """
         return self.parse_number_le(data)/1000000
 
@@ -75,8 +77,8 @@ class parser(parser_template):
         return self.parse_by_format(byte_data, [
             ( "ver", self.parse_number, 0, 1 ),
             ( "cmd_id", self.parse_number_le, 1, 3 ),
-            ( "lon", self.parse_gis, 3, 7 ),
-            ( "lat", self.parse_gis, 7, 11 ),
+            ( "lon", self.parse_gcv, 3, 7 ),
+            ( "lat", self.parse_gcv, 7, 11 ),
             ( "gps_fix", self.parse_gps_fix, 11, 12 ),
             ( "report_type", self.parse_report_type, 11, 12 ),
             ( "reserved", None, 12, 13 ),
