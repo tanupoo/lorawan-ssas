@@ -2,9 +2,14 @@ from binascii import a2b_hex
 try:
     from app_util import default_logger
 except:
-    import sys
-    sys.path.insert(0, "../")
-    from app_util import default_logger
+    # FOR TEST USE
+    if __name__ == "parser_template":
+        import sys
+        sys.path.insert(0, "./")
+        sys.path.insert(0, "../")
+        from app_util import default_logger
+    else:
+        raise
 
 class parser_template():
 
