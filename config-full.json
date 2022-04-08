@@ -41,19 +41,6 @@
 
                 }
             }
-        },
-
-        "YOKOGAWA_XS770A": {
-            "parser": "yokogawa",
-            "db": {
-                "connector": "postgres",
-                "args": {
-                    "db_connect": "host=127.0.0.1 port=5432 dbname=sensors user=demo password=demo123",
-                    "sql_create_table": "create table if not exists xs770a_data ( ts timestamptz, deveui text, rssi float4, snr float4, accel float4, velocity float4, temp float4)",
-                    "sql_insert_table": "insert into xs770a_data ( ts, deveui, rssi, snr, accel, velocity, temp) values ( %(ts)s, %(deveui)s, %(rssi)s, %(snr)s, %(accel)s, %(velocity)s, %(temp)s )"
-                }
-            }
         }
     }
-
 }

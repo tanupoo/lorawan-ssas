@@ -17,7 +17,7 @@ class parser(parser_template):
         b'\x00\x00',-668.5,12.4140625,0.0005259513854980469
         '''
         return {
-            "status": data[1:3],
+            "status": data[1:3].hex(),
             "accel": self.parse_binary16_to_float(data[3:5]),
             "velocity": self.parse_binary16_to_float(data[5:7]),
             "temp": self.parse_binary16_to_float(data[7:9]) }
@@ -28,7 +28,7 @@ class parser(parser_template):
         0x13 Y
         '''
         return {
-            "status": data[1:3],
+            "status": data[1:3].hex(),
             "accel": self.parse_binary16_to_float(data[3:5]),
             "velocity": self.parse_binary16_to_float(data[5:7]) }
 

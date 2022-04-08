@@ -6,10 +6,12 @@
     "server_cert": "/home/lorawan/ssas/server.crt",
     "sensors": {
         "1000000000000002" : {
+            "name": "test-A",
             "desc": "a test sensor A",
             "handler": "MONGO"
         },
-        "1000000000000002" : {
+        "1000000000000003" : {
+            "name": "test-B",
             "desc": "a test sensor B",
             "handler": "MONGO"
         }

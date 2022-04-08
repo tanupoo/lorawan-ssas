@@ -2,9 +2,14 @@ from binascii import a2b_hex
 try:
     from app_util import default_logger
 except:
-    import sys
-    sys.path.insert(0, "../")
-    from app_util import default_logger
+    # FOR TEST USE
+    if __name__ == "parser_template":
+        import sys
+        sys.path.insert(0, "./")
+        sys.path.insert(0, "../")
+        from app_util import default_logger
+    else:
+        raise
 
 class parser_template():
 
@@ -132,6 +137,7 @@ class parser_template():
 
     def test_eval(self, test_data):
         """
+        **FOR TEST USE**
         test_data: a list of test data in hex string.
             e.g. [ { "data":"01020304", "result": { "temp:...} }, ... ]
         """
@@ -156,6 +162,7 @@ class parser_template():
 
     def test(self, test_data):
         """
+        **FOR TEST USE**
         test_data: a list of test data in hex string.
             e.g. [ "01020304", "ffff0000", ... ]
         """

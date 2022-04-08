@@ -11,13 +11,14 @@ class parser(parser_template):
         4: latitude (IEEE 754)
         4: longitude (IEEE 754)
     """
-    def parse_gis(self, data):
+    def parse_gcv(self, data):
         """
-        latitude, longitude, big endien.
-        e.g. 79 96 7e 08 -> 142.513785
-        e.g. 0x017d6b19 -> 24996633 / 1000000 -> 24.996633
+        Geographic Coordinate Value
+        latitude, longitude, little endien.
+        e.g. 0x073dc4db -> 121488603 / 1000000 -> 121.488603
+        e.g. 0x63737d01 ->  24996633 / 1000000 ->  24.996633
         """
-        return self.parse_number(data)/1000000
+        return self.parse_number_le(data)/1000000
 
     def parse_gps_fix(self, data):
         """
@@ -44,8 +45,8 @@ class parser(parser_template):
             ( "gps_fix", self.parse_gps_fix, 1, 2 ),
             ( "report_type", self.parse_report_type, 1, 2 ),
             ( "batt", self.parse_number, 2, 3 ),
-            ( "lat", self.parse_gis, 3, 7 ),
-            ( "lon", self.parse_gis, 7, 11 ),
+            ( "lat", self.parse_gcv, 3, 7 ),
+            ( "lon", self.parse_gcv, 7, 11 ),
             ])
 
 """

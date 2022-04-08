@@ -1,19 +1,15 @@
 #!/usr/bin/env python
 
-'''
-see sample.json
-'''
-
-import sys
 import json
 from datetime import datetime
 import time
 import random
-import httplib2
-import argparse
+import requests
 
 # XXX lon,lat in payload_hex should be variable.
-ns_fixed = {
+src_data = {
+    "DevEUI": "0102030405060708",
+    "DevAddr": "AA000011",
     "payload_hex" : "0000000058d4b41b420ea943430bbb24021d000000000000",
     "Lrcid" : "00000201",
     "Lrrid" : "69606FD0",
@@ -51,49 +47,61 @@ ns_fixed = {
     "mic_hex" : "6fa15f9f",
     }
 
-def parse_args():
-    p = argparse.ArgumentParser(
-            description="This is a pseudo NS message generator.")
-    p.add_argument("server", metavar="URL", type=str,
-        help="url of the server")
-    p.add_argument("deveui", metavar="DevEUI", type=str,
-        help="DevEUI of the device")
-    p.add_argument("devaddr", metavar="DevAddr", type=str,
-        help="DevAddr of the device")
-    p.add_argument("-i", action="store", dest="interval", type=int, default=30,
-                   help="interval to send the message.")
-    p.add_argument("-d", action="append_const", dest="_f_debug",
-                   default=[], const=1, help="increase debug mode.")
-    p.add_argument("--debug", action="store", dest="_debug_level", default=0,
-        help="specify a debug level.")
-
-    args = p.parse_args()
-    if len(args._f_debug) and args._debug_level != -1:
-        print("ERROR: use either -d or --debug option.")
-        exit(1)
-    if args._debug_level == -1:
-        args._debug_level = 0
-    args.debug_level = len(args._f_debug) + args._debug_level
-
-    return args
+from argparse import ArgumentParser
+from argparse import ArgumentDefaultsHelpFormatter
+ap = ArgumentParser(
+        description="pseudo NS message submitter for test.",
+        formatter_class=ArgumentDefaultsHelpFormatter)
+ap.add_argument("url", help="url for submission.")
+ap.add_argument("--deveui", action="store", dest="deveui",
+                help="DevEUI of the device")
+ap.add_argument("--devaddr", action="store", dest="devaddr",
+                help="DevAddr of the device")
+ap.add_argument("-i", action="store", dest="interval", type=int, default=60,
+                help="interval to submit the message.")
+ap.add_argument("-n", action="store", dest="nb_loop", type=int, default=None,
+                help="specify the number of times to submit.")
+ap.add_argument("-k", action="store_false", dest="tls_verify",
+                help="disable to verify the server certificate.")
+ap.add_argument("-d", action="store_true", dest="debug",
+                help="enable debug mode.")
+opt = ap.parse_args()
 
 #
 # main
 #
-opt = parse_args()
-http = httplib2.Http(timeout=5)
 headers = {}
 headers["Content-Type"] = "application/json"
 
-ns_data = {}
+if opt.deveui is not None:
+    src_data["DevEUI"] = opt.deveui
+if opt.devaddr is not None:
+    src_data["DevAddr"] = opt.devaddr
+
 while True:
-    ns_fixed["DevEUI"] = opt.deveui
-    ns_fixed["DevAddr"] = opt.devaddr
-    ns_fixed["Time"] = datetime.now().isoformat()[:-3] + "+09:00"
-    ns_data["DevEUI_uplink"] = ns_fixed
-    payload = json.dumps(ns_data)
+    # update time
+    src_data["Time"] = datetime.now().isoformat()[:-3] + "+09:00"
+    # produce the complete message.
+    message = {}
+    message.update({"DevEUI_uplink": src_data})
+    payload = json.dumps(message)
+    if opt.debug:
+        print(message)
+    # update the header.
     headers["Content-Length"] = str(len(payload))
-    res_headers, res_body = http.request(opt.server, method="POST",
-            body=payload, headers=headers)
-    time.sleep(30)
+    #
+    ret = requests.post(opt.url, headers=headers, data=payload,
+                        verify=opt.tls_verify)
+    #
+    if opt.nb_loop is None:
+        break
+    elif opt.nb_loop > 0:
+        opt.nb_loop -= 1
+        if opt.nb_loop == 0:
+            break
+        else:
+            pass
+    # opt.nb_loop is 0 passed by the option.
+    time.sleep(opt.interval)
+    continue
 
