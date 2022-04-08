@@ -263,12 +263,18 @@ async def uplink_handler(request):
                 "The payload format was not likely JSON.",
                 status=404, log_text=str(e))
     # get data object.
-    kv_data, log_text = config[NS_CONN].gen_common_data(content)
-    if kv_data is None:
-        logger.info(log_text)
-        return gen_http_response(
-            "no data object was found.",
-            status=400) # bad request
+    # XXX need to improved to switch the message parser for the NS.
+    if config.get(NS_CONN):
+        kv_data, log_text = config[NS_CONN].gen_common_data(content)
+        if kv_data is None:
+            logger.info(log_text)
+            return gen_http_response(
+                "no data object was found.",
+                status=400) # bad request
+    else:
+        logger.error("ns_handler is not defined in the config.")
+        # silently discard.
+        return gen_http_response("", status=200)
     #
     deveui = kv_data["deveui"]
     logger.info(f"Received uplink data from {deveui}")
@@ -285,7 +291,9 @@ async def uplink_handler(request):
     kv_data[KEY_APP_DATA] = None
     sh = dev_def[SENSOR_HANDLER]
     if sh.parser:
-        kv_data[KEY_APP_DATA] = sh.parser.parse_hex(kv_data["hex_data"])
+        kv_data[KEY_APP_DATA] = sh.parser.parse_bytes_hex(kv_data["hex_data"])
+    else:
+        logger.warn(f"parser for {deveui} are not defined in the config.")
     """
     return value of parser.paser():
         None: ignore parsing by the parser.
