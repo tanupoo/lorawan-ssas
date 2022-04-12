@@ -97,7 +97,7 @@ async def ws_handler(request):
     common_access_log(request)
     ws = web.WebSocketResponse()
     ret = await ws.prepare(request)
-    logger.debug("ws session starts with:", request)
+    logger.debug(f"ws session starts with: {request}")
     # register this session.
     if ws_map.get(ws):
         # just remove the old one.
@@ -165,9 +165,9 @@ async def client_ws_ui(ws):
     except asyncio.TimeoutError:
         # timeout
         return True
-    logging.debug(f"ws received: type {msg.type}")
+    logging.debug(f"ws received: type {msg}")
     if msg.type == aiohttp.WSMsgType.TEXT:
-        logger.debug("received ws data:" , msg.data)
+        logger.debug(f"received ws data: {msg.data}")
         kv_data = json.loads(msg.data)
         if kv_data["msg_type"] == "register":
             deveui = kv_data.get("deveui")
@@ -178,13 +178,12 @@ async def client_ws_ui(ws):
                 ws_map[ws]["deveui"] = deveui
                 logging.info(f"deveui registered: {deveui}")
                 await send_ws_response(ws, "registered", status=200)
-            return True
         elif kv_data["msg_type"] == "downlink":
             await config[NS_CONN].send_downlink(kv_data)
             await send_ws_response(ws, "queued", status=200)
         else:
             await send_ws_response(ws, "unknown message", status=400)
-        # XXX
+        # return True anyway
         return True
     elif msg.type == aiohttp.WSMsgType.ERROR:
         logging.error("ws connection closed with exception {}"
@@ -225,7 +224,7 @@ async def get_doc_handler(request):
     all document must be placed under the ui directory.
     """
     common_access_log(request)
-    path = "./ui/{}".format(request.path)
+    path = "./ui{}".format(request.path)
     logger.debug("DEBUG: serving {}".format(path))
     if os.path.exists(path):
         return web.FileResponse(path)
