@@ -16,7 +16,7 @@ class parser(parser_template):
     def parse_gcv(self, data):
         """
         Geographic Coordinate Value
-        latitude, longitude, little endien.
+        longitude, latitude, little endien.
         e.g. 0x073dc4db -> 121488603 / 1000000 -> 121.488603
         e.g. 0x63737d01 ->  24996633 / 1000000 ->  24.996633
         """
@@ -55,8 +55,8 @@ class parser(parser_template):
             return self.parse_by_format(byte_data, [
                 ( "version", self.parse_number, 0, 1 ),
                 ( "command_id", self.parse_number, 1, 3 ),
-                ( "lat", self.parse_gcv, 3, 7 ),
-                ( "lon", self.parse_gcv, 7, 11 ),
+                ( "lon", self.parse_gcv, 3, 7 ),
+                ( "lat", self.parse_gcv, 7, 11 ),
                 ( "gps_fix", self.parse_b5to7, 11, 12 ),
                 ( "report_type", self.parse_b0to4, 11, 12 ),
                 ( "batt", self.parse_number, 12, 13 ),
@@ -77,8 +77,8 @@ class parser(parser_template):
             return self.parse_by_format(byte_data, [
                 ( "version", self.parse_number, 0, 1 ),
                 ( "command_id", self.parse_number, 1, 2 ),
-                ( "lat", self.parse_gcv, 2, 6 ),
-                ( "lon", self.parse_gcv, 6, 10 ),
+                ( "lon", self.parse_gcv, 2, 6 ),
+                ( "lat", self.parse_gcv, 6, 10 ),
                 ( "gps_fix", self.parse_b5to7, 10, 11 ),
                 ( "report_type", self.parse_b0to4, 10, 11 ),
                 ])
@@ -97,8 +97,8 @@ class parser(parser_template):
             return self.parse_by_format(byte_data, [
                 ( "version", self.parse_number, 0, 1 ),
                 ( "command_id", self.parse_number, 1, 3 ),
-                ( "lat", self.parse_gcv, 3, 7 ),
-                ( "lon", self.parse_gcv, 7, 11 ),
+                ( "lon", self.parse_gcv, 3, 7 ),
+                ( "lat", self.parse_gcv, 7, 11 ),
                 ( "gps_fix", self.parse_b5to7, 11, 12 ),
                 ( "alarm_type", self.parse_b0to4, 11, 12 ),
                 ( "batt", self.parse_number, 12, 13 ),
@@ -119,8 +119,8 @@ class parser(parser_template):
             return self.parse_by_format(byte_data, [
                 ( "version", self.parse_number, 0, 1 ),
                 ( "command_id", self.parse_number, 1, 2 ),
-                ( "lat", self.parse_gcv, 2, 6 ),
-                ( "lon", self.parse_gcv, 6, 10 ),
+                ( "lon", self.parse_gcv, 2, 6 ),
+                ( "lat", self.parse_gcv, 6, 10 ),
                 ( "gps_fix", self.parse_b5to7, 10, 11 ),
                 ( "alarm_type", self.parse_b0to4, 10, 11 ),
                 ])

@@ -27,7 +27,7 @@ class parser(parser_template):
     def parse_gcv(self, data):
         """
         Geographic Coordinate Value
-        latitude, longitude, little endien.
+        longitude, latitude, little endien.
         e.g. 0x073dc4db -> 121488603 / 1000000 -> 121.488603
         e.g. 0x63737d01 ->  24996633 / 1000000 ->  24.996633
         """
