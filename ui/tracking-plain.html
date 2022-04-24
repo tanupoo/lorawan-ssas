@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <link rel="icon" href="data:,"> <!-- NOTE: Remove it for valid icon. -->
+
+        <!-- CDN
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.14.1/css/ol.css" type="text/css">
+        <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.14.1/build/ol.js"></script>
+        -->
+        <link rel="stylesheet" href="lib/ol/ol.css" type="text/css">
+        <script src="lib/ol/ol.js"></script>
+        <title>Tracking Demo</title>
+    </head>
+
+<body>
+    <div id="grid-base">
+        <div id="box-title">
+            <span class="h1">Tracking Demo.</span>
+        </div>
+        <div id="box-logo">
+            <span class="h3">Cisco Innovation Center Tokyo</span>
+        </div>
+        <div id="box-settings">
+            <!-- DevEUI button -->
+            <div class="params">
+                <label for="input-deveui" class="h3">DevEUI</label>
+                <input type="text" id="input-deveui" placeholder="HEX strings. e.g. 0102030405060708" />
+                <input id="register-deveui" type="button" value="Register"/>
+            </div>
+            <!-- Centering button -->
+            <div class="params">
+                <label for="input-lat" class="h3">Lat</label>
+                <input type="text" id="input-lat" placeholder="e.g. 35.666">
+                <label for="input-lon" class="h3">Lon</label>
+                <input type="text" id="input-lon" placeholder="e.g. 139.730">
+                <input id="move-center" type="button" value="Center"/>
+            </div>
+        </div>
+        <div id="box-search">
+            <div class="params">
+                <label for="input-begin-date" class="h3">Start</label>
+                <input type="date" id="input-begin-date" />
+                <input type="time" id="input-begin-time" />
+                <input id="submit-search" type="button" value="Search"/>
+            </div>
+            <div class="params">
+                <label for="input-end-date" class="h3">End</label>
+                <input type="date" id="input-end-date" />
+                <input type="time" id="input-end-time" />
+            </div>
+            <div>
+                <label for="input-nb-search-limit" class="h3">Limit</label>
+                <input type="text" id="input-nb-search-limit" value="20"/>
+            </div>
+        </div>
+        <div id="box-map">
+            <div id="map-pane"></div>
+        </div>
+        <div id="box-data">
+            <span class="h2">Uplink:</span>
+            <div id="data-pane" class="data"></div>
+        </div>
+        <div id="box-status">
+            <span class="h2">Status:</span>
+            <div id="status-pane" class="data"></div>
+        </div>
+    </div>
+
+    <!-- script -->
+    <link rel="stylesheet" href="tracking-plain.css" type="text/css">
+    <script src="tracking.js"></script>
+
+    <script>
+window.addEventListener("load", olmap_main);
+window.addEventListener('resize', set_base_size);
+    </script>
+
+</head>
+</body>
+</html>

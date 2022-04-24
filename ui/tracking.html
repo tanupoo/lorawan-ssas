@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <link rel="icon" href="data:,"> <!-- NOTE: Remove it for valid icon. -->
+
+        <title>Tracking Demo</title>
+
+        <!-- Vuetify -->
+        <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+        <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/vuetify@2"></script>
+        <!--
+        <script src="lib/vue/vue.js"></script>
+        <link href="lib/vuetify/vuetify.css" rel="stylesheet">
+        <script src="lib/vuetify/vuetify.js"></script>
+        -->
+
+        <!-- Material Design Icons -->
+        <link href="http://cdn.materialdesignicons.com/5.4.55/css/materialdesignicons.min.css" rel="stylesheet">
+        <!--
+        <link href="lib/MaterialDesign/materialdesignicons.min.css" rel="stylesheet">
+        -->
+
+        <!-- OpenLayers -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.14.1/css/ol.css" type="text/css">
+        <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.14.1/build/ol.js"></script>
+        <!--
+        <link rel="stylesheet" href="lib/ol/ol.css" type="text/css">
+        <script src="lib/ol/ol.js"></script>
+        -->
+
+    </head>
+
+    <body>
+
+<div id="app-pane">
+
+    <v-app>
+
+    <v-app-bar
+        color="primary"
+        dark
+        app
+    >
+		<v-app-bar-nav-icon
+			@click.stop="a_drawer = !a_drawer"
+		></v-app-bar-nav-icon>
+		<v-toolbar-title>
+            Tracking Demo [DEV]
+        </v-toolbar-title>
+		<v-spacer></v-spacer>
+        <v-btn icon @click.stop="toggle_show_log()">
+			<v-icon>mdi-dots-vertical</v-icon>
+		</v-btn>
+    </v-app-bar>
+
+    <v-main>
+
+        <!-- DevEUI Field-->
+        <v-container>
+            <div class="justify-center align-center" v-show="!v_deveui">
+                PLEASE REGISTER A DEVICE FIRST.
+            </div>
+            <v-row dense>
+                <v-col cols="12" md="6">
+                    <v-row align="center" dense>
+                        <v-col cols="10">
+                            <v-text-field
+                                class="mx-2"
+                                v-model="v_deveui"
+                                label="DevEUI"
+                                disabled
+                            ></v-text-field>
+                        </v-col>
+                        <v-col cols="2">
+                            <v-btn icon @click.stop="a_register = !a_register">
+                                <v-icon>mdi-square-edit-outline</v-icon>
+                            </v-btn>
+                        </v-col>
+                    </v-row>
+                </v-col>
+
+                <v-col cols="12" md="6">
+                    <v-row align="center" dense>
+                        <v-col cols="5">
+                            <v-text-field
+                                v-model="v_lat"
+                                :rules="latlonRules"
+                                label="Latitude"
+                                id="input-lat"
+                            ></v-text-field>
+                        </v-col>
+                        <v-col cols="5">
+                            <v-text-field
+                                v-model="v_lon"
+                                :rules="latlonRules"
+                                label="Longitude"
+                                id="input-lon"
+                            ></v-text-field>
+                        </v-col>
+                        <v-col cols="2">
+                            <v-btn icon @click.stop="focus_coordinate">
+                                <v-icon>mdi-image-filter-center-focus-strong</v-icon>
+                            </v-btn>
+                        </v-col>
+                    </v-row>
+                </v-col>
+            </v-row>
+        </v-container>
+
+        <!-- Map -->
+        <v-container fluid>
+            <v-row dense>
+                <v-col cols="12">
+                    <v-sheet
+                        id="map-pane"
+                        height="600px"
+                        elevation="2"
+                        >
+                    </v-sheet>
+                </v-col>
+            </v-row>
+        </v-container>
+
+        <!-- DevEUI Registration -->
+        <v-dialog
+            v-model="a_register"
+            max-width="500px"
+        >
+            <v-card>
+                <v-card-title class="primary white--text">
+                    Device Registration
+                </v-card-title>
+                <v-card-text>
+                    <v-text-field
+                        v-model="v_deveui"
+                        label="Input DevEUI"
+                        autofocus
+                        placeholder="e.g. 0102030405060708"
+                        :error-messages="emsg_deveui"
+                        @change="fix_and_check_deveui"
+                    ></v-text-field>
+                </v-card-text>
+                <v-card-actions>
+                    <v-btn
+                        color="grey"
+                        @click.stop="a_register = false"
+                    >
+                        Cancel
+                    </v-btn>
+                    <v-btn
+                        color="primary"
+                        @click.stop="start_register"
+                    >
+                        Submit
+                    </v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
+        <!-- Drawer -->
+        <v-navigation-drawer
+            v-model="a_drawer"
+            temporaty
+            app
+        >
+            <v-list-item>
+                <v-list-item-title class="text-h6">
+                    Device Searching
+                </v-list-item-title>
+                <v-btn
+                    icon
+                    @click.stop="a_drawer = !a_drawer"
+                >
+                    <v-icon>mdi-chevron-left</v-icon>
+                </v-btn>
+            </v-list-item>
+            <v-divider></v-divider>
+
+            <v-list
+                dense
+            >
+                <v-list-item
+                    @click.stop="a_drawer = !a_drawer, a_register = !a_register"
+                >
+                    <v-list-item-icon>
+                        <v-icon>mdi-square-edit-outline</v-icon>
+                    </v-list-item-icon>
+                    <v-list-item-content>
+                        <v-list-item-title>Register Device</v-list-item-title>
+                    </v-list-item-content>
+                </v-list-item>
+
+                <v-list-item
+                    @click.stop="a_drawer = !a_drawer, a_search_path = !a_search_path"
+                >
+                    <v-list-item-icon>
+                        <v-icon>mdi-magnify</v-icon>
+                    </v-list-item-icon>
+                    <v-list-item-content>
+                        <v-list-item-title>Search Path</v-list-item-title>
+                    </v-list-item-content>
+                </v-list-item>
+
+                <v-list-item
+                    @click.stop="a_drawer = !a_drawer, clear_path()"
+                >
+                    <v-list-item-icon>
+                        <v-icon>mdi-vector-square-remove</v-icon>
+                    </v-list-item-icon>
+                    <v-list-item-content>
+                        <v-list-item-title>Clear Path</v-list-item-title>
+                    </v-list-item-content>
+                </v-list-item>
+
+                <v-list-item
+                    @click.stop="a_drawer = !a_drawer, start_unregister()"
+                >
+                    <v-list-item-icon>
+                        <v-icon>mdi-delete</v-icon>
+                    </v-list-item-icon>
+                    <v-list-item-content>
+                        <v-list-item-title>Unregister Device</v-list-item-title>
+                    </v-list-item-content>
+                </v-list-item>
+
+            </v-list>
+        </v-navigation-drawer>
+
+        <!-- Search Path -->
+        <v-dialog
+            v-model="a_search_path"
+            max-width="700px"
+            min-height="400px"
+        >
+            <v-card>
+                <v-card-title class="primary white--text">
+                    Device Setting
+                </v-card-title>
+            <v-divider></v-divider>
+                <v-card-text>
+
+                    <v-form
+                        v-model="v_valid_search_params"
+                    >
+                        <v-row justify="center" align="center">
+                            <v-text-field
+                                v-model="v_deveui"
+                                label="DevEUI"
+                                placeholder="e.g. 0102030405060708"
+                                class="mx-2"
+                                :error-messages="emsg_deveui"
+                                @change = "fix_and_check_deveui"
+                            ></v-text-field>
+                        </v-row>
+
+                        <!-- start date time -->
+                        <v-row justify="center" align="center">
+                            <v-col>
+                                <v-menu
+                                    v-model="a_start_date"
+                                    :close-on-content-click="false"
+                                    transition="scale-transition"
+                                >
+                                    <template v-slot:activator="{ on, attrs }">
+                                        <v-text-field
+                                            v-model="v_start_date"
+                                            label="Date"
+                                            prepend-icon="mdi-calendar"
+                                            readonly
+                                            v-bind="attrs"
+                                            v-on="on"
+                                        ></v-text-field>
+                                    </template>
+                                    <v-date-picker
+                                        v-model="v_start_date"
+                                        @input="a_start_date = !a_start_date"
+                                        :max="getCurrentDateString()"
+                                        min="1900-01-01"
+                                        locale="ja-jp"
+                                        :day-format="d => new Date(d).getDate()"
+                                        no-title
+                                    ></v-date-picker>
+                                </v-menu>
+                            </v-col>
+                            <v-col>
+                                <v-menu
+                                    ref="ref_start_time"
+                                    v-model="a_start_time"
+                                    :close-on-content-click="false"
+                                    :return-value.sync="v_start_time"
+                                    transition="scale-transition"
+                                >
+                                    <template v-slot:activator="{ on, attrs }">
+                                        <v-text-field
+                                            v-model="v_start_time"
+                                            label="Time"
+                                            prepend-icon="mdi-clock-time-four-outline"
+                                            readonly
+                                            v-bind="attrs"
+                                            v-on="on"
+                                        ></v-text-field>
+                                    </template>
+                                    <v-time-picker
+                                        v-if="a_start_time"
+                                        :allowed-minutes="m => m%5==0"
+                                        v-model="v_start_time"
+                                        full-width
+                                        @click:minute="$refs.ref_start_time.save(v_start_time)"
+                                    ></v-time-picker>
+                                </v-menu>
+                            </v-col>
+                        </v-row>
+
+                        <!-- end date time -->
+                        <v-row justify="center" align="center">
+                            <v-col>
+                                <v-menu
+                                    v-model="a_end_date"
+                                    :close-on-content-click="false"
+                                    transition="scale-transition"
+                                >
+                                    <template v-slot:activator="{ on, attrs }">
+                                        <v-text-field
+                                            v-model="v_end_date"
+                                            label="Date"
+                                            prepend-icon="mdi-calendar"
+                                            readonly
+                                            v-bind="attrs"
+                                            v-on="on"
+                                        ></v-text-field>
+                                    </template>
+                                    <v-date-picker
+                                        v-model="v_end_date"
+                                        @input="a_end_date = !a_end_date"
+                                        :max="getCurrentDateString()"
+                                        min="1900-01-01"
+                                        locale="ja-jp"
+                                        :day-format="d => new Date(d).getDate()"
+                                        no-title
+                                    ></v-date-picker>
+                                </v-menu>
+                            </v-col>
+                            <v-col>
+                                <v-menu
+                                    ref="ref_end_time"
+                                    v-model="a_end_time"
+                                    :close-on-content-click="false"
+                                    :return-value.sync="v_end_time"
+                                    transition="scale-transition"
+                                >
+                                    <template v-slot:activator="{ on, attrs }">
+                                        <v-text-field
+                                            v-model="v_end_time"
+                                            label="Time"
+                                            prepend-icon="mdi-clock-time-four-outline"
+                                            readonly
+                                            v-bind="attrs"
+                                            v-on="on"
+                                        ></v-text-field>
+                                    </template>
+                                    <v-time-picker
+                                        v-if="a_end_time"
+                                        :allowed-minutes="m => m%5==0"
+                                        v-model="v_end_time"
+                                        full-width
+                                        @click:minute="$refs.ref_end_time.save(v_end_time)"
+                                    ></v-time-picker>
+                                </v-menu>
+                            </v-col>
+                        </v-row>
+
+                        <!-- option -->
+                        <v-row class="align-center">
+                            <v-col cols="6" md="4">
+                                <v-select
+                                    v-model="nb_path_limit"
+                                    :items="[20, 50, 100, 200]"
+                                    label="Select limit the number of points."
+                                ></v-select>
+                            </v-col>
+                            <v-col cols="6" md="4">
+                                <v-checkbox
+                                    v-model="v_clear_old_path"
+                                    label="Clear Path"
+                                    disabled
+                                ></v-checkbox>
+                            </v-col>
+                        </v-row>
+                    </v-form>
+
+                <v-card-text>
+
+                <v-card-actions>
+                    <v-btn
+                        color="grey"
+                        @click.stop="a_search_path = !a_search_path"
+                    >
+                        Cancel
+                    </v-btn>
+                    <v-btn
+                        color="primary"
+                        @click.stop="a_search_path = !a_search_path, start_search_path()"
+                    >
+                        Submit
+                    </v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
+        <!-- Log -->
+        <v-sheet
+            color="grey"
+            v-show="a_log_pane"
+        >
+            <v-row align="center">
+                <v-col cols="12">
+                    <v-sheet
+                        id="data-pane"
+                    ></v-sheet>
+                </v-col>
+            <v-row>
+            </v-row>
+                <v-col cols="12">
+                    <v-sheet
+                        id="status-pane"
+                    ></v-sheet>
+                </v-col>
+            </v-row>
+        </v-sheet>
+
+    </v-main>
+
+    <!-- footer -->
+    <v-footer
+        color="primary"
+        dark
+        padless
+        app
+    >
+        <v-row class="justify-end" no-gutters>
+            <v-col class="text-right pr-2">
+Cisco Innovation Lab Tokyo.
+            </v-col>
+        </v-row>
+    </v-footer>
+
+</v-app>
+
+</div>
+
+<!-- script -->
+<style>
+#map-pane {
+    height: 100%;
+    width: 98%;
+}
+#data-pane #status-pane
+{
+    white-space: pre;
+    font-family: "Courier New", Courier, monospace;
+}
+</style>
+<script src="tracking.js"></script>
+
+<script>
+new Vue({
+    el: '#app-pane',
+    vuetify: new Vuetify(),
+    data() {
+        return {
+            // deveui register
+            a_register: false,
+            v_deveui: null,
+            emsg_deveui: null,
+            registered: false,
+            // drawer
+            a_drawer: false,
+            // search menu
+            v_valid_search_params: true,
+            a_search_path: false,
+            v_clear_old_path: false,
+            v_lat: null,
+            v_lon: null,
+            nb_path_limit: 50,
+            a_start_date: false,
+            v_start_date: this.getCurrentDateString(-1),
+            a_start_time: false,
+            v_start_time: this.getCurrentTimeString(),
+            a_end_date: false,
+            v_end_date: this.getCurrentDateString(),
+            a_end_time: false,
+            v_end_time: this.getCurrentTimeString(),
+            // rules
+            latlonRules: [ v => isNaN(parseFloat('a')) || 'Invalid number' ],
+            // map
+            marker: null,
+            // log, status
+            a_log_pane: false,
+        }
+    },
+    computed: {
+    },
+    watch: {
+    },
+    methods: {
+        // registering
+        fix_and_check_deveui: function(v) {
+            if (v == null) {
+                // v in [ null, undefined ]
+                this.emsg_deveui= ['Input a 16-bytes HEX string.'];
+                return false;
+            }
+            v = v.replace(/[.:-\s]/g,'').replace(/0x/g,'').toUpperCase()
+            if (/^[0-9a-fA-F]{16}$/.test(v)) {
+                this.v_deveui = v;
+                this.emsg_deveui = [];
+                return true;
+            } else {
+                this.emsg_deveui= ['Must be a 16-bytes HEX string.'];
+                return false;
+            }
+        },
+        start_register: function() {
+            if (this.registered === false) {
+                if (this.fix_and_check_deveui(this.v_deveui)) {
+                    this.a_register = !this.a_register;
+                    put_state(`Registering DevEUI: ${this.v_deveui}`);
+                    marker.ws_send({
+                        "msg_type":"register",
+                        "deveui": this.v_deveui
+                    });
+                }
+            } else {
+                // XXX need to get a response from the server.
+                this.emsg_deveui = [`${this.v_deveui} is registered already.`];
+            }
+        },
+        start_unregister: function() {
+            marker.ws_send({
+                "msg_type":"unregister",
+                "deveui": this.v_deveui
+            });
+        },
+        cb_registered: function() {
+            this.registered = true;
+        },
+        cb_unregistered: function() {
+            this.registered = false;
+        },
+        // focusing
+        focus_coordinate: function() {
+            put_state(`Centering: ${this.v_lat}, ${this.v_lon}`);
+            marker.center({ "lat": this.v_lat, "lon": this.v_lon });
+        },
+        // searching path
+        start_search_path: function() {
+console.log("valid:", this.v_valid_search_params);
+            if (this.v_valid_search_params) {
+                let dt_start = `${this.v_start_date}T${this.v_start_time}+09:00`;
+                let dt_end = `${this.v_end_date}T${this.v_end_time}+09:00`;
+                marker.search_path({
+                    "deveui": this.v_deveui,
+                    "begin": dt_start,
+                    "end": dt_end,
+                    "limit": this.nb_path_limit,
+                });
+                if (this.v_clear_old_path) {
+                    marker.clear_lines();
+                }
+            } else {
+                this.emsg_search_path = 'incorrect parameters.';
+            }
+        },
+        clear_path: function() {
+            marker.clear_lines();
+        },
+        toggle_show_log: function() {
+            this.a_log_pane = !this.a_log_pane;
+        },
+		getCurrentDateString: function(delta_days) {
+            if (delta_days === undefined) {
+                delta_days = 0
+            }
+			return (new Date((Date.now() + delta_days*24*60*60*1000) - (new Date()).getTimezoneOffset()*60000)).toISOString().slice(0,10)
+		},
+		getCurrentTimeString: function() {
+			return (new Date(Date.now() - (new Date()).getTimezoneOffset()*60000)).toISOString().slice(11,19)
+		},
+        cb_update_position: function(latlon) {
+            this.v_lat = latlon.lat;
+            this.v_lon = latlon.lon;
+        },
+    },
+    mounted: function() {
+        marker = new Marker(
+            {
+                "lat": 35.6661680,
+                "lon": 139.7305705
+            },
+            {
+                "cb_registered": this.cb_registered,
+                "cb_unregistered": this.cb_unregistered,
+                "cb_update_position": this.cb_update_position
+            }
+        );
+    }
+})
+</script>
+
+</body>
+</html>

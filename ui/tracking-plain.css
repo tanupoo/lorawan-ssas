@@ -1,0 +1,64 @@
+
+#gird-base {
+    display: grid;
+    grid-template-columns: 500px 1fr;
+    grid-template-rows: 40px 80px 1fr 80px 80px;
+    grid-column-gap: 5px;
+    grid-row-gap: 5px;
+    grid-template-areas:
+        "Z Y"
+        "A B"
+        "S S"
+        "T T"
+        "U U"
+}
+#box-title { grid-area: Z; }
+#box-logo { grid-area: Y; }
+#box-settings { grid-area: A; }
+#box-search { grid-area: B; }
+#box-map { grid-area: S; }
+#box-data { grid-area: T; }
+#box-status { grid-area: U; }
+div.params label       { text-align:right; }
+div.params label:after { content: ":"; }
+
+dev[id^="box"] {
+    border: 1px solid silver;
+    background-color: red;
+}
+#map-pane {
+    height: 100%;
+    width: 98%;
+}
+.data-pane
+{
+    font-family: "Courier New", Courier, monospace;
+}
+#input-deveui
+{
+    width:16em;
+}
+#hexdata
+{
+    width:16em;
+    height:8em;
+    vertical-align:top;
+}
+.h1
+{
+    font-size: x-large;
+    font-weight: bold;
+}
+.h2
+{
+    font-size: large;
+    font-weight: bold;
+}
+.h3
+{
+    font-weight: bold;
+}
+#box-logo
+{
+    text-align: end;
+}
