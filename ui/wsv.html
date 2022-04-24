@@ -109,11 +109,21 @@ function ev_load()
     document.getElementById("btn-register")
         .addEventListener("click", ev_click_register, false);
     // setup ws.
-    server_url = "wss://" + window.location.host + "/ws";
+    let scheme = "";
+    if (/^https:/.test(window.location.href)) {
+        scheme = "wss";
+    } else if (/^http:/.test(window.location.href)) {
+        scheme = "ws";
+    } else {
+        throw `ERROR: unknown scheme, ${window.location.href}`;
+        return;
+    }
+    //server_url = "wss://" + window.location.host + "/ws";
+    server_url = `${scheme}://${window.location.host}/ws`;
     console.log("upgrading " + server_url);
     ws = new WebSocket(server_url);
     ws.onerror = function (event) {
-        console.error(err);
+        console.error(event);
     };
     ws.onmessage = function (event) {
         var content = JSON.parse(event.data);
@@ -135,6 +145,7 @@ function ev_load()
 window.addEventListener("load", ev_load, false);
 
 </script>
+
 <style type="text/css">
 .data
 {
@@ -162,12 +173,12 @@ window.addEventListener("load", ev_load, false);
     <hr>
     <div id="div-data">
     Input your data to send to the device. (case insensitive)<br>
-    <div>DevEUI: <input type="text" id="deveui" class="data" placeholder="HEX strings.">e.g. 0102030405060708</div>
-    <div>FPort: <input type="text" id="fport" class="data" placeholder="HEX string or a decimal value" value="8">e.g. 0x10 in hex, or 16 in decimal.</div>
-    <div>Data: <textarea id="hexdata" class="data" placeholder="a series of HEX string.">0102eeff</textarea>e.g. 0102eeff, 0102EEFF</div>
-    <div>Confirmed: <input id="confirmed" type="checkbox" /></div>
-    <div>Flush message queue: <input id="flush-queue" type="checkbox" /></div>
-    <div><input id="btn-submit" type="button" value="Submit" /></div>
+        <div>DevEUI: <input type="text" id="deveui" class="data" placeholder="HEX strings.">e.g. 0102030405060708</div>
+        <div>FPort: <input type="text" id="fport" class="data" placeholder="HEX string or a decimal value" value="8">e.g. 0x10 in hex, or 16 in decimal.</div>
+        <div>Data: <textarea id="hexdata" class="data" placeholder="a series of HEX string.">0102eeff</textarea>e.g. 0102eeff, 0102EEFF</div>
+        <div>Confirmed: <input id="confirmed" type="checkbox" /></div>
+        <div>Flush message queue: <input id="flush-queue" type="checkbox" /></div>
+        <div><input id="btn-submit" type="button" value="Submit" /></div>
     </div>
 
     <hr>
