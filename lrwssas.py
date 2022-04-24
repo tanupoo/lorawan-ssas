@@ -14,8 +14,11 @@ import logging
 import ssl
 from importlib import import_module
 from argparse import ArgumentParser
-from datetime import datetime
+import time
+from datetime import datetime, timedelta, timezone
 from app_util import iso8601_to_fixed_ts
+
+max_nb_limit = 200
 
 KEY_APP_DATA = "app_data"
 
@@ -50,6 +53,11 @@ SENSOR_HANDLER = "__sh"
 LOG_FMT = "%(asctime)s.%(msecs)d %(lineno)d %(message)s"
 LOG_DATE_FMT = "%Y-%m-%dT%H:%M:%S"
 
+"""
+    <ws>: {
+        "deveui": set( ... )
+    }, ...
+"""
 ws_map = {}
 
 #
@@ -61,14 +69,15 @@ def common_access_log(request):
                                               request.message.url))
 
 def gen_http_response(msg, status=200, log_text=None):
-    res_msg = gen_common_response(msg, status=200, log_text=log_text)
+    res_msg = gen_common_response(msg, status=status, log_text=log_text)
     return web.json_response(res_msg, status=status)
 
-async def send_ws_response(ws, msg, status=200, log_text=None):
-    res_msg = gen_common_response(msg, status=200, log_text=log_text)
+async def send_ws_response(ws, msg, status=200, origin=None, log_text=None):
+    res_msg = gen_common_response(msg, status=status, origin=origin,
+                                  log_text=log_text)
     await ws.send_str(json.dumps(res_msg))
 
-def gen_common_response(msg, status=200, log_text=None):
+def gen_common_response(msg, status=200, origin="response", log_text=None):
     """
     msg: json object such string or dict.
     send below json string.
@@ -85,10 +94,11 @@ def gen_common_response(msg, status=200, log_text=None):
         logger.debug("{} status={}".format(msg, status))
     #
     return {
-            "msg_type": "response",
+            "msg_type": origin,
             "status": status,
-            "ts": datetime.now().isoformat(),
-            "result": msg }
+            "ts": datetime.now().replace(tzinfo=timezone(timedelta(0, -time.timezone))) .isoformat(),
+            "result": msg
+            }
 
 #
 # WS I/O
@@ -97,18 +107,25 @@ async def ws_handler(request):
     common_access_log(request)
     ws = web.WebSocketResponse()
     ret = await ws.prepare(request)
-    logger.debug(f"ws session starts with: {request}")
-    # register this session.
+    logger.debug(f"WS: session starts with: {request}")
     if ws_map.get(ws):
         # just remove the old one.
         ws_map.pop(ws)
-    ws_map.setdefault(ws, { "deveui": None })
+    # register this session.
+    # XXX ws_map is needed to be periodically cleaned up.
+    logger.debug("WS: nb_client={}".format(len(ws_map)))
+    entry = { "deveui": set(), "peerinfo": None }
+    peername = ws._req.transport.get_extra_info("peername")
+    if peername is not None:
+        entry.update({ "peerinfo": f"{peername[0]},{peername[1]}" })
+    ws_map.setdefault(ws, entry)
     #
     # main loop.
     while True:
         #result await yah(ws)
         result = await client_ws_ui(ws)
         if not result:
+            logger.debug(f"ws session: {result}")
             await ws.close()
             break
     #
@@ -125,11 +142,24 @@ async def client_ws_ui(ws):
                 "msg_type": "register",
                 "deveui": [ "...", "..." ]
             }
+        - unregister a set of DevEUI interested.
+            {
+                "msg_type": "unregister",
+                "deveui": [ "...", "..." ]
+            }
         - downlink
             {
                 "msg_type": "downlink",
                 "...",
                 "hex_data": "..."
+            }
+        - search
+            {
+                "msg_type": "search",
+                "deveui": "...",
+                "begin": TS ISO8601,
+                "end": TS ISO8601,
+                "limit": number,
             }
     return value in json string.
         - "msg_type": "uplink"
@@ -153,6 +183,7 @@ async def client_ws_ui(ws):
             {
                 "msg_type": "response", # required.
                 "ts": "...",     # required.
+                "msg_sub_type": "place", # OPTION
                 "result": {             # required.
                     "key1": "value1",   # required.
                     "key2": "value2",
@@ -166,6 +197,7 @@ async def client_ws_ui(ws):
         # timeout
         return True
     logging.debug(f"ws received: type {msg}")
+    # return True anyway except the session is in error.
     if msg.type == aiohttp.WSMsgType.TEXT:
         logger.debug(f"received ws data: {msg.data}")
         kv_data = json.loads(msg.data)
@@ -173,18 +205,80 @@ async def client_ws_ui(ws):
             deveui = kv_data.get("deveui")
             if not deveui:
                 await send_ws_response(ws, "key deveui wasn't specified.",
-                                       status=400)
+                                       origin=kv_data["msg_type"], status=400)
             else:
-                ws_map[ws]["deveui"] = deveui
-                logging.info(f"deveui registered: {deveui}")
-                await send_ws_response(ws, "registered", status=200)
+                ws_map[ws]["deveui"].add(deveui)
+                peerinfo = ws_map[ws]["peerinfo"]
+                logging.info(f"WS: registered: deveui={deveui} peer={peerinfo}")
+                await send_ws_response(ws, "registered",
+                                       origin=kv_data["msg_type"], status=200)
+            return True
+        elif kv_data["msg_type"] == "unregister":
+            deveui = kv_data.get("deveui")
+            if not deveui:
+                await send_ws_response(ws, "key deveui wasn't specified.",
+                                       origin=kv_data["msg_type"], status=400)
+            else:
+                ws_map[ws]["deveui"].remove(deveui)
+                peerinfo = ws_map[ws]["peerinfo"]
+                logging.info(f"WS: unregistered: deveui={deveui} peer={peerinfo}")
+                await send_ws_response(ws, "unregistered",
+                                       origin=kv_data["msg_type"], status=200)
+            return True
         elif kv_data["msg_type"] == "downlink":
             await config[NS_CONN].send_downlink(kv_data)
-            await send_ws_response(ws, "queued", status=200)
-        else:
-            await send_ws_response(ws, "unknown message", status=400)
-        # return True anyway
-        return True
+            await send_ws_response(ws, "queued",
+                                   origin=kv_data["msg_type"], status=200)
+            return True
+        elif kv_data["msg_type"] == "search":
+            deveui = kv_data.get("deveui")
+            dev_def = config[CONF_SENSORS].get(deveui)
+            if dev_def:
+                sh = dev_def[SENSOR_HANDLER]
+                if sh.db_conn:
+                    p_begin = kv_data.get("begin")
+                    p_end = kv_data.get("end")
+                    p_limit = kv_data.get("limit")
+                    if not deveui:
+                        await send_ws_response(ws,
+                                               "key deveui wasn't specified.",
+                                               origin=kv_data["msg_type"],
+                                               status=400)
+                    else:
+                        nb_limit = max_nb_limit
+                        if p_limit:
+                            try:
+                                p_limit = int(p_limit)
+                            except:
+                                await send_ws_response(ws,
+                                                    "invalid parameter",
+                                                    origin=kv_data["msg_type"],
+                                                    status=400)
+                                return True
+                            if p_limit < max_nb_limit:
+                                nb_limit = p_limit
+                        logging.debug(f"search with: {deveui} limit {nb_limit}")
+                        ret = sh.db_conn.db_search(deveui, p_begin, p_end, nb_limit)
+                        logger.info(f"Searched with {deveui} successfully.")
+                        if kv_data.get("msg_sub_type") == "place":
+                            ret = [{"lat":i["lat"], "lon":i["lon"]} for i in
+                                   ret]
+                        await send_ws_response(ws,
+                                               ret,
+                                               origin=kv_data["msg_type"],
+                                               status=200)
+                else:
+                    await send_ws_response(ws,
+                                           "search not supported",
+                                           origin=kv_data["msg_type"],
+                                           status=400)
+                return True
+            else:
+                await send_ws_response(ws,
+                                       f"deveui {deveui} not found",
+                                       origin=kv_data["msg_type"],
+                                       status=400)
+                return True
     elif msg.type == aiohttp.WSMsgType.ERROR:
         logging.error("ws connection closed with exception {}"
                       .format(ws.exception()))
@@ -332,15 +426,13 @@ async def uplink_handler(request):
     WS node registered.
     """
     if len(ws_map) != 0:
-        logger.debug("start WS processing: nb_client={}".format(len(ws_map)))
         ws_uplink_msg = json.dumps({
                 "msg_type": "uplink",
                 "dev_name": dev_def.get(CONF_SENSOR_NAME),
                 "app_data": kv_data
                 })
         for ws, x in ws_map.items():
-            if deveui == x["deveui"]:
-                print(ws)
+            if x["deveui"].issuperset({deveui}):
                 logger.info(f"send uplink from {deveui}")
                 try:
                     await ws.send_str(ws_uplink_msg)
